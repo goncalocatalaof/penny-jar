@@ -2,45 +2,53 @@ body {
   font-family: 'SF Pro', sans-serif;
   background-color: #f9f9f9;
   margin: 0;
-  padding: 0;
+  padding: 16px;
   display: flex;
   justify-content: center;
-  min-height: 100vh;
   align-items: center;
+  min-height: 100vh;
 }
 
 .container {
   background: white;
   padding: 24px;
   border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   width: 100%;
-  max-width: 420px;
+  max-width: 360px;
   box-sizing: border-box;
 }
 
-input, select, textarea {
+h1 {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 24px;
+}
+
+input,
+select,
+textarea {
   width: 100%;
   padding: 14px;
-  font-size: 17px;
-  border-radius: 8px;
+  font-size: 16px;
+  border-radius: 10px;
   border: 1px solid #ccc;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   box-sizing: border-box;
 }
 
 textarea {
-  height: 45px; /* reduzido */
+  height: 44px;
   resize: none;
 }
 
 button {
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: white;
   padding: 14px;
-  font-size: 17px;
+  font-size: 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   width: 100%;
   cursor: pointer;
 }

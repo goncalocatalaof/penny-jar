@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wallet</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#2979ff" />
+
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+</head>
+<body>
+  <div class="container">
+    <h1>Wallet</h1>
+    <form id="expense-form">
+      <label for="date">Date</label>
+      <input type="date" id="date" name="date" required />
+
+      <label for="value">Value (€)</label>
+      <input type="number" id="value" name="value" step="0.01" required />
+
+      <label for="cost">Cost</label>
+      <select id="cost" name="cost" required>
+        <option value="">-- Seleciona --</option>
+        <option>Eating Out</option>
+        <option>Drinks</option>
+        <option>Sport</option>
+        <option>Health</option>
+        <option>Fuel/Tolls</option>
+        <option>Transportation</option>
+        <option>Clothing</option>
+        <option>Vacation</option>
+        <option>Other</option>
+      </select>
+
+      <label for="comments">Comments</label>
+      <textarea id="comments" name="comments" rows="1"></textarea>
+
+      <button type="submit">Submit</button>
+    </form>
+
+    <p id="mensagem"></p>
+  </div>
+
+  <script src="script.js"></script>
+  
+  <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js')
+      .then(() => console.log('Service Worker registered'))
+      .catch(err => console.log('Service Worker registration failed:', err));
+  }
+  </script>
+</body>
+</html>

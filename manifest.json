@@ -1,10 +1,10 @@
 {
-  "name": "Registo de Despesas",
-  "short_name": "Despesas",
+  "name": "Expense Tracker",
+  "short_name": "Expenses",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f5f7fa",
-  "theme_color": "#2979ff",
+  "theme_color": "#a6cf89",
   "icons": [
     {
       "src": "icons/icon-192.png",

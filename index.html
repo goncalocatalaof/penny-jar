@@ -2,40 +2,122 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Wallet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Expense Tracker</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>Wallet</h1>
-    <form id="expense-form">
-      <label for="date">Date</label>
-      <input type="date" id="date" name="date" required />
+  <main id="app">
+    <!-- Personal Expense View -->
+    <section id="personal" class="view active">
+      <h2>Personal Expense</h2>
+      <form>
+        <label>Date:
+          <input type="date" id="personal-date" required />
+        </label>
 
-      <label for="value">Value (€)</label>
-      <input type="number" id="value" name="value" step="0.01" min="0" required />
+        <label>Amount:</label>
+          <input type="number" step="0.01" inputmode="decimal" placeholder="0.00" id="personal-value" required />
 
-      <label for="cost">Cost</label>
-      <select id="cost" name="cost" required>
-        <option value="">-- Select --</option>
-        <option>Eating Out</option>
-        <option>Drinks</option>
-        <option>Sport</option>
-        <option>Health</option>
-        <option>Fuel/Tolls</option>
-        <option>Transportation</option>
-        <option>Clothing</option>
-        <option>Vacation</option>
-        <option>Other</option>
-      </select>
+          <div class="form-group">
+          <label>Category</label>
+          <div class="categories">
+            <div class="category">Eating Out</div>
+            <div class="category">Drinks</div>
+            <div class="category">Sport</div>
+            <div class="category">Health</div>
+            <div class="category">Fuel/Tolls</div>
+            <div class="category">Transportion</div>
+            <div class="category">Clothing</div>
+            <div class="category">Vacation</div>
+            <div class="category">Other</div>
+          </div>
+        </div>
 
-      <label for="comments">Comments</label>
-      <textarea id="comments" name="comments" placeholder="Add comments..."></textarea>
+        <label>Comment:
+          <input type="text" id="personal-comment" />
+        </label>
 
-      <button type="submit">Submit</button>
-    </form>
-  </div>
+        <button type="submit">Save</button>
+      </form>
+    </section>
+
+    <!-- Family Expense View -->
+    <section id="family" class="view">
+      <h2>Family Expense</h2>
+      <form>
+        <label>Date:
+          <input type="date" id="family-date" required />
+        </label>
+
+        <label>Amount:</label>
+          <input type="number" id="family-value" required />
+
+        <div class="form-group">
+          <label>Category</label>
+          <div class="categories">
+            <div class="category">Grocery</div>
+            <div class="category">House</div>
+            <div class="category">Fuel</div>
+            <div class="category">Childcare</div>
+            <div class="category">Health</div>
+            <div class="category">Vehicle</div>
+            <div class="category">Park/Tolls</div>
+            <div class="category">Other</div>
+          </div>
+        </div>
+
+        <label>Comment:
+          <input type="text" id="family-comment" />
+        </label>
+
+        <button type="submit">Save</button>
+      </form>
+    </section>
+
+    <!-- Utilities Expense View -->
+    <section id="utilities" class="view">
+      <h2>Utilities Expense</h2>
+      <form>
+        <label>Date:
+          <input type="date" id="utilities-date" required />
+        </label>
+
+        <label>Amount:</label>
+          <input type="number" id="utilities-value" required />
+
+        <div class="form-group">
+          <label>Category</label>
+          <div class="categories">
+            <div class="category">Water</div>
+            <div class="category">Electricity</div>
+            <div class="category">Gas</div>
+          </div>
+        </div>
+
+        <label>Comment:
+          <input type="text" id="utilities-comment" />
+        </label>
+
+        <button type="submit">Save</button>
+      </form>
+    </section>
+
+    <!-- Dashboard View -->
+    <section id="dashboard" class="view">
+      <h2>Dashboard (Coming Soon)</h2>
+      <p>Statistics and charts will be here.</p>
+    </section>
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button onclick="navigate('personal')">Personal</button>
+    <button onclick="navigate('family')">Family</button>
+    <button onclick="navigate('utilities')">Utilities</button>
+    <button onclick="navigate('dashboard')">Dashboard</button>
+  </nav>
+
   <script src="script.js"></script>
 </body>
 </html>

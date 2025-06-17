@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 // Send to googlesheets
-  const scriptURL = "https://script.google.com/macros/library/d/1DUE3bKXreCB0PnnFGKv_40hkS9NccvrWBY5zWupOz0J8gXIOQt-dwYkg/2"; // Replace with your actual script URL
+  const scriptURL = "https://script.google.com/macros/s/AKfycbyGOA0B7OwSL_iYc3NWZI3dYNzCaBDbKESavi7I7G1cyQmxVl5MHVdRzW3gc2025tAqhA/exec"; // Replace with your actual script URL
 
 function handleFormSubmit(formId, sheetName) {
   const form = document.getElementById(formId);

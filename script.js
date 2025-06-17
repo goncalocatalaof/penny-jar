@@ -28,13 +28,53 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-// Value with 2 decimals
-document.querySelectorAll('input[type="number"]').forEach(input => {
+/* Value with 2 decimals
+document.querySelectorAll('input[type="text"]').forEach(input => {
   input.addEventListener('blur', () => {
     let value = parseFloat(input.value);
     if (!isNaN(value)) {
       input.value = value.toFixed(2);
     }
   });
-});
+});*/
 
+  // Select all inputs with class "amount-input"
+  const amountInputs = document.querySelectorAll('.amount');
+
+  amountInputs.forEach(input => {
+    input.addEventListener('input', () => {
+      let value = input.value;
+
+      // Replace dot with comma
+      value = value.replace('.', ',');
+
+      // Allow only digits and one comma
+      value = value
+        .replace(/[^0-9,]/g, '')    // remove non-numeric/non-comma
+        .replace(/,+/g, ',');       // collapse multiple commas
+
+      // Limit to 2 decimal places
+      if (value.includes(',')) {
+        const [intPart, decimalPart] = value.split(',');
+        value = intPart + ',' + decimalPart.slice(0, 2);
+      }
+
+      input.value = value;
+    });
+  });
+
+  // Optional: convert values on form submit
+  document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const inputs = form.querySelectorAll('.amount');
+      inputs.forEach(input => {
+        const raw = input.value.trim().replace(',', '.');
+        const normalized = parseFloat(raw).toFixed(2);
+
+        console.log(`Submitting ${normalized} from input:`, input);
+        // Submit normalized to your backend or store
+      });
+    });
+  });

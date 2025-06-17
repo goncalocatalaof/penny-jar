@@ -60,7 +60,7 @@ button {
   border: 1px solid #D1D1D6;
 }
 
-input[type="number"] {
+input.amount{
   font-size: 1.25rem;
   font-weight: bold;
 }

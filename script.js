@@ -160,7 +160,7 @@ document.querySelectorAll('input[type="text"]').forEach(input => {
     });
   });
 // Send to googlesheets
-  const scriptURL = "https://script.google.com/macros/s/AKfycbxC-0p4MYMNKn6YTCRBm9JOnUHTAFfR8w5CQaxeAzWXefN6-fy8wuQnA_d-7ssR66qMAg/exec"; // Replace with your actual script URL
+  const scriptURL = "https://script.google.com/macros/library/d/1DUE3bKXreCB0PnnFGKv_40hkS9NccvrWBY5zWupOz0J8gXIOQt-dwYkg/2"; // Replace with your actual script URL
 
 function handleFormSubmit(formId, sheetName) {
   const form = document.getElementById(formId);

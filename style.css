@@ -85,18 +85,18 @@ input[type="number"] {
 
 .category:hover {
   background-color: #E5F0FF;
-  border-color: #5AC8FA;
+  border-color: #6A7BA2;
 }
 
 .category.selected {
-  background-color: #5AC8FA;
+  background-color: #6A7BA2;
   color: white;
-  border-color: #5AC8FA;
+  border-color: #6A7BA2;
 }
 
 /* Save button */
 button {
-  background-color: #5AC8FA;
+  background-color: #6A7BA2;
   color: white;
   border: none;
   cursor: pointer;
@@ -123,6 +123,6 @@ button:hover {
 .bottom-nav button {
   background: none;
   border: none;
-  color: #5AC8FA;
+  color: #6A7BA2;
   font-size: 1rem;
 }

@@ -78,3 +78,34 @@ document.querySelectorAll('input[type="text"]').forEach(input => {
       });
     });
   });
+// Send to googlesheets
+  const scriptURL = "https://script.google.com/macros/s/AKfycbxC-0p4MYMNKn6YTCRBm9JOnUHTAFfR8w5CQaxeAzWXefN6-fy8wuQnA_d-7ssR66qMAg/exec"; // Replace with your actual script URL
+
+function handleFormSubmit(formId, sheetName) {
+  const form = document.getElementById(formId);
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const formData = new FormData(form);
+    formData.append("sheet", sheetName); // Add target sheet/tab name
+
+    try {
+      const response = await fetch(scriptURL, {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.text();
+      alert(`Submitted to ${sheetName} sheet: ${result}`);
+      form.reset();
+    } catch (error) {
+      alert("Submission failed: " + error.message);
+    }
+  });
+}
+
+// Link each form to the appropriate sheet
+handleFormSubmit("form-personal", "Personal");
+handleFormSubmit("form-family", "Family");
+handleFormSubmit("form-utilities", "Utilities");

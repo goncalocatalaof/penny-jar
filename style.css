@@ -108,7 +108,7 @@ button:hover {
 /* Bottom navigation */
 .bottom-nav {
   position: fixed;
-  bottom: 10px;
+  bottom: 0;
   left: 0;
   width: 100%;
   display: flex;

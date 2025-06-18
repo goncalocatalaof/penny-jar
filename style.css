@@ -48,7 +48,6 @@ form {
 label {
   font-weight: 600;
   display: flex;
-  justify-content: flex-start;
   flex-direction: column;
   gap: 0.5rem;
 }

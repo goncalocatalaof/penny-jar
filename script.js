@@ -19,17 +19,18 @@ function initClient() {
     console.log("GAPI initialized");
     gapiInitialized = true;
 
-    // Enable Sign-in button
+    // Enable sign-in button
     const signInBtn = document.getElementById('google-signin');
     if (signInBtn) signInBtn.disabled = false;
 
-    // Attach form handlers (forms won't submit until signed in)
+    // Attach form handlers
     attachFormHandler("form-personal");
     attachFormHandler("form-family");
     attachFormHandler("form-utilities");
 
   }).catch(err => {
     console.error("GAPI init error:", err);
+    alert("Google API initialization failed. Check console for details.");
   });
 }
 
@@ -42,7 +43,7 @@ gapi.load('client:auth2', initClient);
 async function ensureSignedIn() {
   const authInstance = gapi.auth2.getAuthInstance();
   if (!authInstance.isSignedIn.get()) {
-    await authInstance.signIn(); // Triggers Google sign-in popup
+    await authInstance.signIn(); // Opens Google sign-in popup
     alert("Signed in! Now you can submit forms.");
   }
 }

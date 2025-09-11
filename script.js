@@ -96,56 +96,69 @@ const CLIENT_ID = 'YOUR_CLIENT_ID.apps.googleusercontent.com';
 const SHEET_ID = 'YOUR_SHEET_ID';
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 
+let gapiInitialized = false;
+
 function initClient() {
   gapi.client.init({
     clientId: CLIENT_ID,
     scope: SCOPES,
     discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"]
   }).then(() => {
-    return gapi.auth2.getAuthInstance().signIn();
+    console.log("GAPI initialized");
+    gapiInitialized = true;
+  }, err => {
+    console.error("GAPI init error:", err);
   });
 }
 
-function handleClientLoad() {
-  gapi.load('client:auth2', initClient);
-}
+gapi.load('client:auth2', initClient);
 
 function attachFormHandler(formId, sheetName) {
   const form = document.getElementById(formId);
-  form.addEventListener('submit', function (e) {
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const formData = new FormData(form);
-    const values = [
-      formData.get('Date'),
-      formData.get('Amount'),
-      formData.get('Category'),
-      formData.get('Comment')
-    ];
+    if (!gapiInitialized) {
+      alert("Google API not initialized yet. Try again in a few seconds.");
+      return;
+    }
 
-    const params = {
-      spreadsheetId: SHEET_ID,
-      range: `${sheetName}!A:D`,   // use the correct sheet
-      valueInputOption: "RAW",
-      insertDataOption: "INSERT_ROWS"
-    };
+    try {
+      const authInstance = gapi.auth2.getAuthInstance();
+      if (!authInstance.isSignedIn.get()) {
+        await authInstance.signIn();
+      }
 
-    const valueRangeBody = { values: [values] };
+      const formData = new FormData(form);
+      const values = [
+        formData.get('Date'),
+        formData.get('Amount'),
+        formData.get('Category'),
+        formData.get('Comment')
+      ];
 
-    gapi.client.sheets.spreadsheets.values.append(params, valueRangeBody).then(response => {
+      const response = await gapi.client.sheets.spreadsheets.values.append({
+        spreadsheetId: SHEET_ID,
+        range: `${sheetName}!A:D`,
+        valueInputOption: "RAW",
+        insertDataOption: "INSERT_ROWS",
+        resource: { values: [values] }
+      });
+
+      console.log("Sheets API response:", response);
       alert("Data submitted to " + sheetName);
       form.reset();
-    }, error => {
-      console.error("Error:", error);
+
+    } catch (error) {
+      console.error("Sheets API error:", error);
       alert("Failed to submit data.");
-    });
+    }
   });
 }
 
+// Wait until DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-  handleClientLoad();
-
   attachFormHandler("form-personal", "Personal");
-  attachFormHandler("form-family", "Family");
-  attachFormHandler("form-utilities", "Utilities");
 });

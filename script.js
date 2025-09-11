@@ -28,16 +28,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-/* Value with 2 decimals
-document.querySelectorAll('input[type="text"]').forEach(input => {
-  input.addEventListener('blur', () => {
-    let value = parseFloat(input.value);
-    if (!isNaN(value)) {
-      input.value = value.toFixed(2);
-    }
-  });
-});*/
-
   // Select all inputs with class "amount-input"
   const amountInputs = document.querySelectorAll('.amount');
 
@@ -101,35 +91,61 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
+//Google Sheets API integration
+const CLIENT_ID = 'YOUR_CLIENT_ID.apps.googleusercontent.com';
+const SHEET_ID = 'YOUR_SHEET_ID';
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 
-// Send to googlesheets
-  const scriptURL = "https://script.google.com/macros/s/AKfycbyGOA0B7OwSL_iYc3NWZI3dYNzCaBDbKESavi7I7G1cyQmxVl5MHVdRzW3gc2025tAqhA/exec"; // Replace with your actual script URL
-
-function handleFormSubmit(formId, sheetName) {
-  const form = document.getElementById(formId);
-
-  form.addEventListener("submit", async function (e) {
-    e.preventDefault();
-
-    const formData = new FormData(form);
-    formData.append("sheet", sheetName); // Add target sheet/tab name
-
-    try {
-      const response = await fetch(scriptURL, {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await response.text();
-      alert(`Submitted to ${sheetName} sheet: ${result}`);
-      form.reset();
-    } catch (error) {
-      alert("Submission failed: " + error.message);
-    }
+function initClient() {
+  gapi.client.init({
+    clientId: CLIENT_ID,
+    scope: SCOPES,
+    discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"]
+  }).then(() => {
+    return gapi.auth2.getAuthInstance().signIn();
   });
 }
 
-// Link each form to the appropriate sheet
-handleFormSubmit("form-personal", "Personal");
-handleFormSubmit("form-family", "Family");
-handleFormSubmit("form-utilities", "Utilities");
+function handleClientLoad() {
+  gapi.load('client:auth2', initClient);
+}
+
+function attachFormHandler(formId, sheetName) {
+  const form = document.getElementById(formId);
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const formData = new FormData(form);
+    const values = [
+      formData.get('Date'),
+      formData.get('Amount'),
+      formData.get('Category'),
+      formData.get('Comment')
+    ];
+
+    const params = {
+      spreadsheetId: SHEET_ID,
+      range: `${sheetName}!A:D`,   // use the correct sheet
+      valueInputOption: "RAW",
+      insertDataOption: "INSERT_ROWS"
+    };
+
+    const valueRangeBody = { values: [values] };
+
+    gapi.client.sheets.spreadsheets.values.append(params, valueRangeBody).then(response => {
+      alert("Data submitted to " + sheetName);
+      form.reset();
+    }, error => {
+      console.error("Error:", error);
+      alert("Failed to submit data.");
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  handleClientLoad();
+
+  attachFormHandler("form-personal", "Personal");
+  attachFormHandler("form-family", "Family");
+  attachFormHandler("form-utilities", "Utilities");
+});

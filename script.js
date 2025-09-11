@@ -19,16 +19,17 @@ function initClient() {
     console.log("GAPI initialized");
     gapiInitialized = true;
 
-    // Attach all form handlers only after gapi is ready
-    attachFormHandler("form-personal", "Personal");
-    attachFormHandler("form-family", "Family");
-    attachFormHandler("form-utilities", "Utilities");
+    // Attach handlers for all forms AFTER gapi is ready
+    attachFormHandler("form-personal");
+    attachFormHandler("form-family");
+    attachFormHandler("form-utilities");
+
   }).catch(err => {
     console.error("GAPI init error:", err);
   });
 }
 
-// Load gapi client and auth2
+// Load gapi client & auth2
 gapi.load('client:auth2', initClient);
 
 // ============================
@@ -40,11 +41,11 @@ function navigate(viewId) {
 }
 
 // ============================
-// 3. DOM CONTENT LOADED EVENTS
+// 3. DOM READY EVENTS
 // ============================
 document.addEventListener('DOMContentLoaded', () => {
 
-  // 3a. Set default date to today for all date inputs
+  // 3a. Set default date to today
   const today = new Date().toISOString().split('T')[0];
   document.querySelectorAll('input[type="date"]').forEach(input => input.value = today);
 
@@ -57,24 +58,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 3c. Amount input formatting (comma decimal)
+  // 3c. Amount input formatting (comma decimal, max 2 decimals)
   const amountInputs = document.querySelectorAll('.amount');
   amountInputs.forEach(input => {
     input.addEventListener('input', () => {
       let value = input.value;
+      value = value.replace('.', ','); // replace dot with comma
+      value = value.replace(/[^0-9,]/g, '').replace(/,+/g, ','); // only digits + one comma
 
-      // Replace dot with comma
-      value = value.replace('.', ',');
-
-      // Allow only digits and one comma
-      value = value
-        .replace(/[^0-9,]/g, '')  // remove non-numeric/non-comma
-        .replace(/,+/g, ',');     // collapse multiple commas
-
-      // Limit to 2 decimal places
       if (value.includes(',')) {
         const [intPart, decimalPart] = value.split(',');
-        value = intPart + ',' + decimalPart.slice(0, 2);
+        value = intPart + ',' + decimalPart.slice(0, 2); // max 2 decimals
       }
 
       input.value = value;
@@ -85,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================
 // 4. FORM SUBMISSION HANDLER
 // ============================
-function attachFormHandler(formId, sheetName) {
+function attachFormHandler(formId) {
   const form = document.getElementById(formId);
   if (!form) return;
 
@@ -104,31 +98,34 @@ function attachFormHandler(formId, sheetName) {
         await authInstance.signIn();
       }
 
-      // Gather form values
+      // Collect form data
       const formData = new FormData(form);
       const values = [
         formData.get('Date'),
         formData.get('Amount').trim().replace(',', '.'), // normalize amount
         formData.get('Category'),
-        formData.get('Comment')
+        formData.get('Comment'),
+        formId // optional: track which form submitted
       ];
 
-      // Append values to Google Sheet
+      console.log(`Submitting values from ${formId}:`, values);
+
+      // Append to "penny" sheet
       const response = await gapi.client.sheets.spreadsheets.values.append({
         spreadsheetId: SHEET_ID,
-        range: `${sheetName}!A:D`,
+        range: `penny!A:E`, // all forms write to "penny" sheet
         valueInputOption: "RAW",
         insertDataOption: "INSERT_ROWS",
         resource: { values: [values] }
       });
 
       console.log("Sheets API response:", response);
-      alert(`Data submitted to ${sheetName}`);
+      alert(`Data submitted from ${formId} to penny sheet`);
       form.reset();
 
     } catch (error) {
       console.error("Sheets API error:", error);
-      alert("Failed to submit data.");
+      alert("Failed to submit data. Check console for details.");
     }
   });
 }

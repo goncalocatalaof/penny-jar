@@ -19,7 +19,11 @@ function initClient() {
     console.log("GAPI initialized");
     gapiInitialized = true;
 
-    // Attach handlers for all forms AFTER gapi is ready
+    // Enable Sign-in button
+    const signInBtn = document.getElementById('google-signin');
+    if (signInBtn) signInBtn.disabled = false;
+
+    // Attach form handlers (forms won't submit until signed in)
     attachFormHandler("form-personal");
     attachFormHandler("form-family");
     attachFormHandler("form-utilities");
@@ -33,7 +37,34 @@ function initClient() {
 gapi.load('client:auth2', initClient);
 
 // ============================
-// 2. NAVIGATION LOGIC
+// 2. SIGN-IN FUNCTION
+// ============================
+async function ensureSignedIn() {
+  const authInstance = gapi.auth2.getAuthInstance();
+  if (!authInstance.isSignedIn.get()) {
+    await authInstance.signIn(); // Triggers Google sign-in popup
+    alert("Signed in! Now you can submit forms.");
+  }
+}
+
+// Sign-in button click
+document.addEventListener('DOMContentLoaded', () => {
+  const signInBtn = document.getElementById('google-signin');
+  if (signInBtn) {
+    signInBtn.disabled = true; // disable until gapi initialized
+    signInBtn.addEventListener('click', async () => {
+      try {
+        await ensureSignedIn();
+      } catch (err) {
+        console.error("Sign-in failed:", err);
+        alert("Sign-in failed. Check console for details.");
+      }
+    });
+  }
+});
+
+// ============================
+// 3. NAVIGATION LOGIC
 // ============================
 function navigate(viewId) {
   document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
@@ -41,15 +72,15 @@ function navigate(viewId) {
 }
 
 // ============================
-// 3. DOM READY EVENTS
+// 4. DOM READY EVENTS
 // ============================
 document.addEventListener('DOMContentLoaded', () => {
 
-  // 3a. Set default date to today
+  // 4a. Set default date to today
   const today = new Date().toISOString().split('T')[0];
   document.querySelectorAll('input[type="date"]').forEach(input => input.value = today);
 
-  // 3b. Category selection logic
+  // 4b. Category selection logic
   const categories = document.querySelectorAll(".category");
   categories.forEach(category => {
     category.addEventListener("click", () => {
@@ -58,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 3c. Amount input formatting (comma decimal, max 2 decimals)
+  // 4c. Amount input formatting (comma decimal, max 2 decimals)
   const amountInputs = document.querySelectorAll('.amount');
   amountInputs.forEach(input => {
     input.addEventListener('input', () => {
@@ -77,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================
-// 4. FORM SUBMISSION HANDLER
+// 5. FORM SUBMISSION HANDLER
 // ============================
 function attachFormHandler(formId) {
   const form = document.getElementById(formId);
@@ -87,16 +118,13 @@ function attachFormHandler(formId) {
     e.preventDefault();
 
     if (!gapiInitialized) {
-      alert("Google API not initialized yet. Please wait a few seconds.");
+      alert("Google API not initialized yet. Try again in a few seconds.");
       return;
     }
 
     try {
-      // Ensure user is signed in
-      const authInstance = gapi.auth2.getAuthInstance();
-      if (!authInstance.isSignedIn.get()) {
-        await authInstance.signIn();
-      }
+      // Ensure user is signed in before submitting
+      await ensureSignedIn();
 
       // Collect form data
       const formData = new FormData(form);

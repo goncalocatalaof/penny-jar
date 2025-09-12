@@ -6,12 +6,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Load environment variables (set in Vercel dashboard)
+    // 1. Load environment variables
     const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"); // important: fix line breaks
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+    const sheetName = process.env.GOOGLE_SHEET_NAME || "Penny"; // default "Penny"
 
-    // 2. Authenticate
+    if (!clientEmail || !privateKey || !spreadsheetId) {
+      return res.status(500).json({ error: "Missing Google API credentials" });
+    }
+
+    // 2. Authenticate with JWT
     const auth = new google.auth.JWT(
       clientEmail,
       null,
@@ -21,18 +26,16 @@ export default async function handler(req, res) {
 
     const sheets = google.sheets({ version: "v4", auth });
 
-    // 3. Get form data from frontend
-    const { values } = req.body; 
-    // Example: { values: ["2025-09-12", "Coffee", "2.50", "Food"] }
-
+    // 3. Get values from request body
+    const { values } = req.body;
     if (!values || !Array.isArray(values)) {
-      return res.status(400).json({ error: "Invalid request body" });
+      return res.status(400).json({ error: "Invalid request body, expected { values: [] }" });
     }
 
-    // 4. Append to Google Sheets
+    // 4. Append values to Google Sheet
     await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: "Penny!A:D", // <-- change to your sheet/tab name & columns
+      range: `${sheetName}!A:D`,
       valueInputOption: "USER_ENTERED",
       requestBody: {
         values: [values],
@@ -43,6 +46,6 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error("Error appending to sheet:", err);
-    return res.status(500).json({ error: "Failed to add data" });
+    return res.status(500).json({ error: "Failed to add data to sheet" });
   }
 }

@@ -7,91 +7,72 @@ function navigate(viewId) {
 }
 
 // ============================
-// DOM READY EVENTS
+// 1. DOM Ready
 // ============================
 document.addEventListener('DOMContentLoaded', () => {
 
-  // Set default date to today
+  const form = document.getElementById("form-personal");
+
+  // Default date to today
   const today = new Date().toISOString().split('T')[0];
-  document.querySelectorAll('input[type="date"]').forEach(input => input.value = today);
+  const dateInput = form.querySelector('input[type="date"]');
+  if(dateInput) dateInput.value = today;
 
-  // Category selection logic
-  document.querySelectorAll('.categories').forEach(container => {
-    const categories = container.querySelectorAll('.category');
-    categories.forEach(category => {
-      category.addEventListener('click', () => {
-        categories.forEach(cat => cat.classList.remove('selected'));
-        category.classList.add('selected');
-      });
+  // Category selection
+  const categories = form.querySelectorAll(".category");
+  categories.forEach(category => {
+    category.addEventListener("click", () => {
+      categories.forEach(cat => cat.classList.remove("selected"));
+      category.classList.add("selected");
     });
   });
 
-  // Amount input formatting
-  document.querySelectorAll('.amount').forEach(input => {
-    input.addEventListener('input', () => {
-      let value = input.value.replace('.', ',');
-      value = value.replace(/[^0-9,]/g, '').replace(/,+/g, ',');
-      if (value.includes(',')) {
-        const [intPart, decimalPart] = value.split(',');
-        value = intPart + ',' + decimalPart.slice(0, 2);
+  // Amount formatting
+  const amountInput = form.querySelector(".amount");
+  if(amountInput){
+    amountInput.addEventListener("input", () => {
+      let value = amountInput.value;
+      value = value.replace('.', ',').replace(/[^0-9,]/g,'').replace(/,+/g, ',');
+      if(value.includes(',')){
+        const [intPart, decPart] = value.split(',');
+        value = intPart + ',' + decPart.slice(0,2);
       }
-      input.value = value;
+      amountInput.value = value;
     });
-  });
+  }
 
-  // Attach forms
-  attachFormHandler('form-personal');
-  attachFormHandler('form-family');
-  attachFormHandler('form-utilities');
-
-});
-
-// ============================
-// FORM SUBMISSION HANDLER
-// ============================
-function attachFormHandler(formId) {
-  const form = document.getElementById(formId);
-  if (!form) return;
-
-  form.addEventListener('submit', async (e) => {
+  // Form submit
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    const date = form.querySelector('input[type="date"]').value;
+    const amount = form.querySelector(".amount").value.trim().replace(',', '.');
+    const category = form.querySelector(".category.selected")?.textContent || "";
+    const comment = form.querySelector('input[type="text"]#personal-comment').value;
+
+    const payload = { values: [date, amount, category, comment] };
+
     try {
-      // Collect form values
-      const dateInput = form.querySelector('input[type="date"]')?.value || '';
-      const amountInput = form.querySelector('.amount')?.value.trim().replace(',', '.') || '';
-      const commentInput = form.querySelector('input[type="text"]#' + formId.split('-')[0] + '-comment')?.value || '';
-
-      // Get selected category
-      const category = form.querySelector('.category.selected')?.textContent || '';
-
-      const values = [dateInput, amountInput, category, commentInput, formId];
-
-      console.log(`Submitting values from ${formId}:`, values);
-
-      // POST to serverless function
-      const response = await fetch('/api/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values })
+      const response = await fetch("/api/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
       });
 
       const result = await response.json();
 
-      if (response.ok) {
-        alert(`Data submitted from ${formId} to penny sheet`);
+      if(response.ok){
+        alert("Data submitted!");
         form.reset();
-        // reset categories
-        form.querySelectorAll('.category.selected').forEach(cat => cat.classList.remove('selected'));
-        // reset date
-        form.querySelector('input[type="date"]').value = new Date().toISOString().split('T')[0];
       } else {
-        alert('Failed to submit: ' + result.error);
+        console.error(result);
+        alert("Failed to submit data. Check console.");
       }
 
-    } catch (err) {
-      console.error('Error submitting to serverless function:', err);
-      alert('Error submitting data. Check console.');
+    } catch(err){
+      console.error("Error submitting to serverless function:", err);
+      alert("Failed to submit data. Check console.");
     }
+
   });
-}
+});

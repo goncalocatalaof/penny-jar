@@ -1,5 +1,5 @@
 // ============================
-// 1. NAVIGATION LOGIC
+// NAVIGATION LOGIC
 // ============================
 function navigate(viewId) {
   document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
@@ -7,49 +7,47 @@ function navigate(viewId) {
 }
 
 // ============================
-// 2. DOM READY EVENTS
+// DOM READY EVENTS
 // ============================
 document.addEventListener('DOMContentLoaded', () => {
 
-  // 2a. Set default date to today
+  // Set default date to today
   const today = new Date().toISOString().split('T')[0];
   document.querySelectorAll('input[type="date"]').forEach(input => input.value = today);
 
-  // 2b. Category selection logic
-  const categories = document.querySelectorAll(".category");
-  categories.forEach(category => {
-    category.addEventListener("click", () => {
-      categories.forEach(cat => cat.classList.remove("selected"));
-      category.classList.add("selected");
+  // Category selection logic
+  document.querySelectorAll('.categories').forEach(container => {
+    const categories = container.querySelectorAll('.category');
+    categories.forEach(category => {
+      category.addEventListener('click', () => {
+        categories.forEach(cat => cat.classList.remove('selected'));
+        category.classList.add('selected');
+      });
     });
   });
 
-  // 2c. Amount input formatting (comma decimal, max 2 decimals)
-  const amountInputs = document.querySelectorAll('.amount');
-  amountInputs.forEach(input => {
+  // Amount input formatting
+  document.querySelectorAll('.amount').forEach(input => {
     input.addEventListener('input', () => {
-      let value = input.value;
-      value = value.replace('.', ','); // replace dot with comma
-      value = value.replace(/[^0-9,]/g, '').replace(/,+/g, ','); // only digits + one comma
-
+      let value = input.value.replace('.', ',');
+      value = value.replace(/[^0-9,]/g, '').replace(/,+/g, ',');
       if (value.includes(',')) {
         const [intPart, decimalPart] = value.split(',');
-        value = intPart + ',' + decimalPart.slice(0, 2); // max 2 decimals
+        value = intPart + ',' + decimalPart.slice(0, 2);
       }
-
       input.value = value;
     });
   });
 
-  // 2d. Attach all forms to submit handler
-  attachFormHandler("form-personal");
-  attachFormHandler("form-family");
-  attachFormHandler("form-utilities");
+  // Attach forms
+  attachFormHandler('form-personal');
+  attachFormHandler('form-family');
+  attachFormHandler('form-utilities');
 
 });
 
 // ============================
-// 3. FORM SUBMISSION HANDLER
+// FORM SUBMISSION HANDLER
 // ============================
 function attachFormHandler(formId) {
   const form = document.getElementById(formId);
@@ -58,23 +56,23 @@ function attachFormHandler(formId) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    // Collect form data
-    const formData = new FormData(form);
-    const values = [
-      formData.get('Date'),
-      formData.get('Amount').trim().replace(',', '.'), // normalize amount
-      formData.get('Category'),
-      formData.get('Comment'),
-      formId // optional: track which form submitted
-    ];
-
-    console.log(`Submitting values from ${formId}:`, values);
-
     try {
-      // Send data to Vercel serverless function
-      const response = await fetch("/api/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      // Collect form values
+      const dateInput = form.querySelector('input[type="date"]')?.value || '';
+      const amountInput = form.querySelector('.amount')?.value.trim().replace(',', '.') || '';
+      const commentInput = form.querySelector('input[type="text"]#' + formId.split('-')[0] + '-comment')?.value || '';
+
+      // Get selected category
+      const category = form.querySelector('.category.selected')?.textContent || '';
+
+      const values = [dateInput, amountInput, category, commentInput, formId];
+
+      console.log(`Submitting values from ${formId}:`, values);
+
+      // POST to serverless function
+      const response = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ values })
       });
 
@@ -83,13 +81,17 @@ function attachFormHandler(formId) {
       if (response.ok) {
         alert(`Data submitted from ${formId} to penny sheet`);
         form.reset();
+        // reset categories
+        form.querySelectorAll('.category.selected').forEach(cat => cat.classList.remove('selected'));
+        // reset date
+        form.querySelector('input[type="date"]').value = new Date().toISOString().split('T')[0];
       } else {
-        alert("Failed to submit: " + result.error);
+        alert('Failed to submit: ' + result.error);
       }
 
     } catch (err) {
-      console.error("Error submitting to serverless function:", err);
-      alert("Error submitting data. Check console.");
+      console.error('Error submitting to serverless function:', err);
+      alert('Error submitting data. Check console.');
     }
   });
 }

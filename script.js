@@ -1,3 +1,14 @@
+// ============================
+// NAVIGATION LOGIC
+// ============================
+function navigate(viewId) {
+  document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+  document.getElementById(viewId).classList.add('active');
+}
+
+// ============================
+// DOM Ready
+// ============================
 document.addEventListener('DOMContentLoaded', () => {
 
   const forms = [
@@ -105,3 +116,4 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 });
+

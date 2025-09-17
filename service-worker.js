@@ -1,23 +1,29 @@
-const CACHE_NAME = 'despesas-cache-v1';
+const CACHE_NAME = 'pennyjar-cache-v1'; // bump version when updating files
 const urlsToCache = [
   './',
   './index.html',
   './style.css',
   './script.js',
   './manifest.json',
-  // adiciona aqui os teus ícones
+  './images/continente.png',
+  './images/pingo_doce.png',
+  './images/fruit.png',
+  // Add more icons/images if needed
 ];
 
-// Instalar e guardar recursos no cache
+// ============================
+// INSTALL - Cache all essential assets
+// ============================
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(urlsToCache);
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
   );
+  self.skipWaiting(); // Activate SW immediately after install
 });
 
-// Ativar service worker e limpar caches antigos
+// ============================
+// ACTIVATE - Clear old caches
+// ============================
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames =>
@@ -30,13 +36,28 @@ self.addEventListener('activate', event => {
       )
     )
   );
+  self.clients.claim(); // Take control of all pages immediately
 });
 
-// Interceptar pedidos e responder do cache ou fetch
+// ============================
+// FETCH - Serve from cache or network
+// ============================
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(resp => {
-      return resp || fetch(event.request);
-    })
-  );
+  if (event.request.mode === 'navigate') {
+    // Network-first for navigation (HTML pages)
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+          return response;
+        })
+        .catch(() => caches.match(event.request).then(resp => resp || caches.match('./index.html')))
+    );
+  } else {
+    // Cache-first for CSS, JS, images
+    event.respondWith(
+      caches.match(event.request).then(resp => resp || fetch(event.request))
+    );
+  }
 });

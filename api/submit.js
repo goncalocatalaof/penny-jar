@@ -12,7 +12,6 @@ export default async function handler(req, res) {
     const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
     const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
     const spreadsheetId = process.env.SHEET_ID;
-    const sheetName = process.env.GOOGLE_SHEET_NAME || "Penny";
 
     if (!clientEmail || !privateKey || !spreadsheetId) {
       return res.status(500).json({ error: "Missing Google API credentials" });
@@ -28,22 +27,38 @@ export default async function handler(req, res) {
 
     const sheets = google.sheets({ version: "v4", auth });
 
-    // 3. Get values from request body
-    const { values } = req.body;
+    // 3. Get values and sheetName from request body
+    const { values, sheetName } = req.body;
+
     if (!values || !Array.isArray(values)) {
       return res.status(400).json({ error: "Invalid request body, expected { values: [] }" });
     }
 
-    if (process.env.NODE_ENV !== "production") {
-      console.log("Appending to sheet:", { spreadsheetId, sheetName, values });
+    if (!sheetName || typeof sheetName !== "string") {
+      return res.status(400).json({ error: "Missing or invalid sheetName in request" });
     }
 
-    // 4. Append values to Google Sheet
+    // 4. Create timestamp
+    const now = new Date();
+    const timestamp = `${String(now.getDate()).padStart(2,'0')}/` +
+                      `${String(now.getMonth()+1).padStart(2,'0')}/` +
+                      `${now.getFullYear()} ` +
+                      `${String(now.getHours()).padStart(2,'0')}:` +
+                      `${String(now.getMinutes()).padStart(2,'0')}:` +
+                      `${String(now.getSeconds()).padStart(2,'0')}`;
+
+    const row = [timestamp, ...values]; // timestamp first, then form values
+
+    if (process.env.NODE_ENV !== "production") {
+      console.log("Appending to sheet:", { spreadsheetId, sheetName, row });
+    }
+
+    // 5. Append row to Google Sheet
     await sheets.spreadsheets.values.append({
       spreadsheetId,
       range: `${sheetName}!A:Z`, // allow flexible columns
       valueInputOption: "USER_ENTERED",
-      requestBody: { values: [values] },
+      requestBody: { values: [row] },
     });
 
     return res.status(200).json({ message: "Data added successfully" });

@@ -76,6 +76,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if(response.ok){
           alert("Data submitted!");
           form.reset();
+
+            // Reset date to today
+  const dateInput = form.querySelector('input[type="date"]');
+  if(dateInput){
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today;
+  }
         } else {
           console.error(result);
           alert("Failed to submit data. Check console.");
@@ -90,3 +97,4 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 });
+

@@ -1,8 +1,20 @@
 {
-  "name": "expense-tracker",
+  "name": "penny-jar",
   "version": "1.0.0",
   "type": "module",
+  "description": "Family expense tracker PWA connected to Google Sheets",
+  "author": "Gonçalo Catalão Fernandes",
+  "license": "MIT",
+  "scripts": {
+    "start": "node api/submit.js",
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
   "dependencies": {
     "googleapis": "^118.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0"
   }
 }

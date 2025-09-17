@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     // 1. Load environment variables
     const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
     const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
-    const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+    const spreadsheetId = process.env.SHEET_ID;
     const sheetName = process.env.GOOGLE_SHEET_NAME || "Penny";
 
     if (!clientEmail || !privateKey || !spreadsheetId) {

@@ -94,6 +94,26 @@ input.amount{
   border-color: #6A7BA2;
 }
 
+#grocery-icons {
+  display: flex;
+  gap: 8px;
+  margin: 5px 0;
+}
+
+.grocery-icon {
+  width: 50px;      /* adjust width */
+  height: 50px;     /* adjust height */
+  object-fit: cover; /* keeps image aspect ratio and fills the box */
+  cursor: pointer;
+  border-radius: 5px; /* optional: rounded corners */
+  border: 1px solid #ccc; /* optional: border */
+  transition: transform 0.2s;
+}
+
+.grocery-icon:hover {
+  transform: scale(1.1); /* subtle hover effect */
+}
+
 /* Save button */
 button {
   background-color: #6A7BA2;
@@ -126,3 +146,4 @@ button:hover {
   color: #6A7BA2;
   font-size: 1rem;
 }
+

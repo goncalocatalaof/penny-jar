@@ -149,3 +149,16 @@ button:hover {
   color: #6A7BA2;
   font-size: 1rem;
 }
+
+/* Normalize date input on iOS */
+input[type="date"] {
+  width: 100%;              /* force same width */
+  -webkit-appearance: none; /* remove default iOS styling */
+  appearance: none;
+  padding-right: 0.75rem;   /* consistent padding */
+  font-size: 1rem;          /* match other inputs */
+  border: 1px solid #D1D1D6;
+  border-radius: 8px;
+  background-color: #fff;
+}
+

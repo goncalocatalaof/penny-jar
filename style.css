@@ -52,15 +52,17 @@ label {
   gap: 0.5rem;
 }
 
+/* Inputs and buttons have same width */
 input,
 button {
+  width: 100%;
   padding: 0.75rem;
   border-radius: 8px;
   font-size: 1rem;
   border: 1px solid #D1D1D6;
 }
 
-input.amount{
+input.amount {
   font-size: 1.25rem;
   font-weight: bold;
 }
@@ -94,24 +96,25 @@ input.amount{
   border-color: #6A7BA2;
 }
 
+/* Grocery icons */
 #grocery-icons {
   display: flex;
-  gap: 8px;
-  margin: 5px 0;
+  gap: 10px;
+  margin: 8px 0;
 }
 
 .grocery-icon {
-  width: 50px;      /* adjust width */
-  height: 50px;     /* adjust height */
-  object-fit: cover; /* keeps image aspect ratio and fills the box */
+  width: 60px;
+  height: 60px;
+  object-fit: contain; /* keeps PNG clean, no stretching */
   cursor: pointer;
-  border-radius: 5px; /* optional: rounded corners */
-  border: 1px solid #ccc; /* optional: border */
+  border: none; /* no border */
+  border-radius: 10px; /* optional rounded */
   transition: transform 0.2s;
 }
 
 .grocery-icon:hover {
-  transform: scale(1.1); /* subtle hover effect */
+  transform: scale(1.1);
 }
 
 /* Save button */
@@ -146,4 +149,3 @@ button:hover {
   color: #6A7BA2;
   font-size: 1rem;
 }
-

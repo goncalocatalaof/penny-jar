@@ -11,68 +11,82 @@ function navigate(viewId) {
 // ============================
 document.addEventListener('DOMContentLoaded', () => {
 
-  const form = document.getElementById("form-personal");
+  // Map each form to its sheet name
+  const forms = [
+    { formId: "form-personal", sheetName: "Personal1" },
+    { formId: "form-family", sheetName: "Family" },
+    { formId: "form-utilities", sheetName: "Utilities" }
+  ];
 
-  // Default date to today
-  const today = new Date().toISOString().split('T')[0];
-  const dateInput = form.querySelector('input[type="date"]');
-  if(dateInput) dateInput.value = today;
+  forms.forEach(({ formId, sheetName }) => {
+    const form = document.getElementById(formId);
+    if (!form) return;
 
-  // Category selection
-  const categories = form.querySelectorAll(".category");
-  categories.forEach(category => {
-    category.addEventListener("click", () => {
-      categories.forEach(cat => cat.classList.remove("selected"));
-      category.classList.add("selected");
-    });
-  });
+    // Default date to today
+    const today = new Date().toISOString().split('T')[0];
+    const dateInput = form.querySelector('input[type="date"]');
+    if(dateInput) dateInput.value = today;
 
-  // Amount formatting
-  const amountInput = form.querySelector(".amount");
-  if(amountInput){
-    amountInput.addEventListener("input", () => {
-      let value = amountInput.value;
-      value = value.replace('.', ',').replace(/[^0-9,]/g,'').replace(/,+/g, ',');
-      if(value.includes(',')){
-        const [intPart, decPart] = value.split(',');
-        value = intPart + ',' + decPart.slice(0,2);
-      }
-      amountInput.value = value;
-    });
-  }
-
-  // Form submit
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const date = form.querySelector('input[type="date"]').value;
-    const amount = form.querySelector(".amount").value.trim().replace(',', '.');
-    const category = form.querySelector(".category.selected")?.textContent || "";
-    const comment = form.querySelector('input[type="text"]#personal-comment').value;
-
-    const payload = { values: [date, amount, category, comment] };
-
-    try {
-      const response = await fetch("/api/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+    // Category selection
+    const categories = form.querySelectorAll(".category");
+    categories.forEach(category => {
+      category.addEventListener("click", () => {
+        categories.forEach(cat => cat.classList.remove("selected"));
+        category.classList.add("selected");
       });
+    });
 
-      const result = await response.json();
+    // Amount formatting
+    const amountInput = form.querySelector(".amount");
+    if(amountInput){
+      amountInput.addEventListener("input", () => {
+        let value = amountInput.value;
+        value = value.replace('.', ',').replace(/[^0-9,]/g,'').replace(/,+/g, ',');
+        if(value.includes(',')){
+          const [intPart, decPart] = value.split(',');
+          value = intPart + ',' + decPart.slice(0,2);
+        }
+        amountInput.value = value;
+      });
+    }
 
-      if(response.ok){
-        alert("Data submitted!");
-        form.reset();
-      } else {
-        console.error(result);
+    // Form submit
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const date = form.querySelector('input[type="date"]').value;
+      const amount = form.querySelector(".amount").value.trim().replace(',', '.');
+      const category = form.querySelector(".category.selected")?.textContent || "";
+      const comment = form.querySelector('input[type="text"]#personal-comment')?.value || "";
+
+      const payload = { 
+        sheetName,             // <-- add sheetName here
+        values: [date, amount, category, comment] 
+      };
+
+      try {
+        const response = await fetch("/api/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if(response.ok){
+          alert("Data submitted!");
+          form.reset();
+        } else {
+          console.error(result);
+          alert("Failed to submit data. Check console.");
+        }
+
+      } catch(err){
+        console.error("Error submitting to serverless function:", err);
         alert("Failed to submit data. Check console.");
       }
 
-    } catch(err){
-      console.error("Error submitting to serverless function:", err);
-      alert("Failed to submit data. Check console.");
-    }
-
+    });
   });
+
 });

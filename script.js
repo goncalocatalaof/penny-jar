@@ -1,138 +1,117 @@
-// ============================
-// NAVIGATION LOGIC
-// ============================
+// script.js
+
 function navigate(viewId) {
-  document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
-  document.getElementById(viewId).classList.add('active');
+  document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
+  document.getElementById(viewId).classList.add("active");
 }
 
-// ============================
-// DOM Ready
-// ============================
-document.addEventListener('DOMContentLoaded', () => {
-
-  const forms = [
-    { formId: "form-personal", sheetName: "Personal1" },
-    { formId: "form-family", sheetName: "Family" },
-    { formId: "form-utilities", sheetName: "Utilities" }
-  ];
-
-  forms.forEach(({ formId, sheetName }) => {
-    const form = document.getElementById(formId);
-    if (!form) return;
-
-    // Default date to today
-    const today = new Date().toISOString().split('T')[0];
-    const dateInput = form.querySelector('input[type="date"]');
-    if (dateInput) dateInput.value = today;
-
-    // Category selection (for Personal/Family text categories)
-    const categories = form.querySelectorAll(".category");
-    categories.forEach(category => {
-      category.addEventListener("click", () => {
-        categories.forEach(cat => cat.classList.remove("selected"));
-        category.classList.add("selected");
-      });
-    });
-
-    // Utilities icons behavior (store category via data-value)
-    if (formId === "form-utilities") {
-      const utilityIcons = form.querySelectorAll(".category");
-      utilityIcons.forEach(icon => {
-        icon.addEventListener("click", () => {
-          // Remove highlight
-          utilityIcons.forEach(ic => ic.classList.remove("selected"));
-          icon.classList.add("selected");
-
-          // Save chosen value into hidden input
-          let hiddenInput = form.querySelector("input[name='category']");
-          if (!hiddenInput) {
-            hiddenInput = document.createElement("input");
-            hiddenInput.type = "hidden";
-            hiddenInput.name = "category";
-            form.appendChild(hiddenInput);
-          }
-          hiddenInput.value = icon.dataset.value; // e.g., "gas", "water", "electricity"
-        });
-      });
-    }
-
-    // Amount formatting (commas instead of dots)
-    const amountInput = form.querySelector(".amount");
-    if (amountInput) {
-      amountInput.addEventListener("input", () => {
-        let value = amountInput.value;
-        value = value.replace('.', ',').replace(/[^0-9,]/g, '').replace(/,+/g, ',');
-        if (value.includes(',')) {
-          const [intPart, decPart] = value.split(',');
-          value = intPart + ',' + decPart.slice(0, 2);
-        }
-        amountInput.value = value;
-      });
-    }
-
-    // Form submit
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      const date = form.querySelector('input[type="date"]').value;
-      const amount = form.querySelector(".amount")?.value.trim().replace(',', '.') || "";
-      const comment = form.querySelector("input[name='comment']")?.value || "";
-
-      let category = "";
-      let consumption = "";
-
-      if (formId === "form-utilities") {
-        // Category comes from hidden input
-        category = form.querySelector("input[name='category']")?.value || "";
-        consumption = form.querySelector("input[name='consumption']")?.value || "";
-      } else {
-        // Category is text input or selected item
-        category = form.querySelector(".category.selected")?.textContent
-          || form.querySelector("input[name='category']")?.value
-          || "";
-      }
-
-      // Build payload dynamically (no null columns)
-      const values = [date, category, amount];
-      if (formId === "form-utilities") values.push(consumption);
-      values.push(comment);
-
-      const payload = {
-        sheetName,
-        values
-      };
-
-      try {
-        const response = await fetch("/api/submit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-          alert("Data submitted!");
-          form.reset();
-
-          // Reset date to today
-          if (dateInput) {
-            const today = new Date().toISOString().split('T')[0];
-            dateInput.value = today;
-          }
-        } else {
-          console.error(result);
-          alert("Failed to submit data. Check console.");
-        }
-
-      } catch (err) {
-        console.error("Error submitting to serverless function:", err);
-        alert("Failed to submit data. Check console.");
-      }
-
-    });
-
+// Utility function for posting data to API
+async function submitToSheet(values, sheetName) {
+  const res = await fetch("/api/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ values, sheetName }),
   });
+  if (!res.ok) throw new Error("Failed to save");
+  return res.json();
+}
 
+// ----- CATEGORY SELECTION -----
+document.querySelectorAll(".categories").forEach((container) => {
+  container.addEventListener("click", (e) => {
+    const categoryDiv = e.target.closest(".category");
+    if (!categoryDiv) return;
+
+    // Remove previous selection
+    container.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
+    categoryDiv.classList.add("selected");
+
+    // Utilities special case → update hidden input
+    if (container.closest("#utilities")) {
+      document.getElementById("utility-category").value = categoryDiv.dataset.value || "";
+    }
+  });
+});
+
+// ----- PERSONAL FORM -----
+document.getElementById("form-personal").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const date = document.getElementById("personal-date").value;
+  const value = document.getElementById("personal-value").value;
+  const category = document.querySelector("#form-personal .category.selected")?.textContent || "";
+  const comment = document.getElementById("personal-comment").value || "";
+
+  if (!category) {
+    alert("Please select a category");
+    return;
+  }
+
+  const values = [date, value, category, comment];
+
+  try {
+    await submitToSheet(values, "Personal");
+    alert("Saved to Personal!");
+    e.target.reset();
+    document.querySelectorAll("#form-personal .category").forEach((c) => c.classList.remove("selected"));
+  } catch (err) {
+    alert("Error saving personal expense");
+    console.error(err);
+  }
+});
+
+// ----- FAMILY FORM -----
+document.getElementById("form-family").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const date = document.getElementById("family-date").value;
+  const value = document.getElementById("family-value").value;
+  const category = document.querySelector("#form-family .category.selected")?.textContent || "";
+  const comment = document.getElementById("family-comment").value || "";
+
+  if (!category) {
+    alert("Please select a category");
+    return;
+  }
+
+  const values = [date, value, category, comment];
+
+  try {
+    await submitToSheet(values, "Family");
+    alert("Saved to Family!");
+    e.target.reset();
+    document.querySelectorAll("#form-family .category").forEach((c) => c.classList.remove("selected"));
+  } catch (err) {
+    alert("Error saving family expense");
+    console.error(err);
+  }
+});
+
+// ----- UTILITIES FORM -----
+document.getElementById("form-utilities").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const date = document.getElementById("utilities-date").value;
+  const value = document.getElementById("utilities-value").value;
+  const category = document.getElementById("utility-category").value;
+  const consumption = document.getElementById("utilities-consumption").value;
+  const comment = document.getElementById("utilities-comment").value || "";
+
+  if (!category) {
+    alert("Please select a utility category");
+    return;
+  }
+
+  const values = [date, category, value, consumption, comment];
+
+  try {
+    await submitToSheet(values, "Utilities");
+    alert("Saved to Utilities!");
+    e.target.reset();
+    document.getElementById("utility-category").value = "";
+    document.querySelectorAll("#form-utilities .category").forEach((c) => c.classList.remove("selected"));
+  } catch (err) {
+    alert("Error saving utility expense");
+    console.error(err);
+  }
 });

@@ -38,14 +38,14 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Missing or invalid sheetName in request" });
     }
 
-    // 4. Create timestamp
+    // 4. Create timestamp in Lisbon time
     const now = new Date();
-    const timestamp = `${String(now.getDate()).padStart(2,'0')}/` +
-                      `${String(now.getMonth()+1).padStart(2,'0')}/` +
-                      `${now.getFullYear()} ` +
-                      `${String(now.getHours()).padStart(2,'0')}:` +
-                      `${String(now.getMinutes()).padStart(2,'0')}:` +
-                      `${String(now.getSeconds()).padStart(2,'0')}`;
+    const timestamp = now.toLocaleString("en-GB", { 
+      timeZone: "Europe/Lisbon", 
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: false 
+    });
 
     const row = [timestamp, ...values]; // timestamp first, then form values
 

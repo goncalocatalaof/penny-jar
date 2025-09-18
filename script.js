@@ -1,117 +1,157 @@
 // script.js
 
+// Navigation
 function navigate(viewId) {
   document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
   document.getElementById(viewId).classList.add("active");
 }
 
-// Utility function for posting data to API
+// helpers
+function setTodayOnInput(inputEl) {
+  if (!inputEl) return;
+  inputEl.value = new Date().toISOString().split("T")[0];
+}
+
 async function submitToSheet(values, sheetName) {
   const res = await fetch("/api/submit", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ values, sheetName }),
   });
-  if (!res.ok) throw new Error("Failed to save");
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.error || "Save failed");
+  }
   return res.json();
 }
 
-// ----- CATEGORY SELECTION -----
-document.querySelectorAll(".categories").forEach((container) => {
-  container.addEventListener("click", (e) => {
-    const categoryDiv = e.target.closest(".category");
-    if (!categoryDiv) return;
+// DOM ready
+document.addEventListener("DOMContentLoaded", () => {
+  // set default date for every date input
+  document.querySelectorAll('input[type="date"]').forEach(setTodayOnInput);
 
-    // Remove previous selection
-    container.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
-    categoryDiv.classList.add("selected");
+  // CATEGORY CLICKING (delegated per .categories container)
+  document.querySelectorAll(".categories").forEach((container) => {
+    container.addEventListener("click", (ev) => {
+      const categoryDiv = ev.target.closest(".category");
+      if (!categoryDiv) return;
 
-    // Utilities special case → update hidden input
-    if (container.closest("#utilities")) {
-      document.getElementById("utility-category").value = categoryDiv.dataset.value || "";
-    }
+      // clear selected in this container and set on clicked
+      container.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
+      categoryDiv.classList.add("selected");
+
+      // determine which form this container belongs to
+      const form = container.closest("form");
+      if (!form) return;
+
+      // FAMILY form: show grocery icons if category is Grocery
+      if (form.id === "form-family") {
+        const groceryIcons = document.getElementById("grocery-icons");
+        const text = (categoryDiv.textContent || "").trim().toLowerCase();
+        if (text === "grocery") {
+          groceryIcons.style.display = "flex";
+        } else {
+          groceryIcons.style.display = "none";
+        }
+      }
+
+      // UTILITIES form: store the chosen category in hidden input
+      if (form.id === "form-utilities") {
+        const hidden = form.querySelector("input[name='category']"); // exists in HTML
+        // prefer data-value (for icon-based categories), otherwise use text
+        const value = (categoryDiv.dataset && categoryDiv.dataset.value)
+          ? categoryDiv.dataset.value
+          : (categoryDiv.textContent || "").trim();
+        if (hidden) hidden.value = value;
+      }
+    });
   });
-});
 
-// ----- PERSONAL FORM -----
-document.getElementById("form-personal").addEventListener("submit", async (e) => {
-  e.preventDefault();
+  // Grocery icons clicking (fill comment)
+  const groceryIcons = document.querySelectorAll("#grocery-icons .grocery-icon");
+  groceryIcons.forEach((icon) => {
+    icon.addEventListener("click", () => {
+      const word = icon.dataset.word || icon.getAttribute("alt") || "";
+      const commentInput = document.getElementById("family-comment");
+      if (!commentInput) return;
+      commentInput.value = word;
+    });
+  });
 
-  const date = document.getElementById("personal-date").value;
-  const value = document.getElementById("personal-value").value;
-  const category = document.querySelector("#form-personal .category.selected")?.textContent || "";
-  const comment = document.getElementById("personal-comment").value || "";
+  // ---- Form handlers ----
 
-  if (!category) {
-    alert("Please select a category");
-    return;
+  // PERSONAL
+  const personalForm = document.getElementById("form-personal");
+  if (personalForm) {
+    personalForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const date = personalForm.querySelector("input[name='date']").value || "";
+      const category = personalForm.querySelector(".category.selected")?.textContent?.trim() || "";
+      const amount = personalForm.querySelector("input[name='amount']").value?.trim().replace(",", ".") || "";
+      const comment = personalForm.querySelector("input[name='comment']").value || "";
+
+      if (!category) {
+        alert("Please select a category for Personal.");
+        return;
+      }
+
+      const values = [date, category, amount, comment];
+
+      try {
+        await submitToSheet(values, "Personal1"); // keep your actual sheet tab name here
+        alert("Saved to Personal.");
+        personalForm.reset();
+        // clear categories selection
+        personalForm.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
+        // reset date
+        setTodayOnInput(personalForm.querySelector("input[name='date']"));
+      } catch (err) {
+        console.error(err);
+        alert("Failed to save Personal.");
+      }
+    });
   }
 
-  const values = [date, value, category, comment];
+  // FAMILY
+  const familyForm = document.getElementById("form-family");
+  if (familyForm) {
+    familyForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const date = familyForm.querySelector("input[name='date']").value || "";
+      const category = familyForm.querySelector(".category.selected")?.textContent?.trim() || "";
+      const amount = familyForm.querySelector("input[name='amount']").value?.trim().replace(",", ".") || "";
+      const comment = familyForm.querySelector("input[name='comment']").value || "";
 
-  try {
-    await submitToSheet(values, "Personal");
-    alert("Saved to Personal!");
-    e.target.reset();
-    document.querySelectorAll("#form-personal .category").forEach((c) => c.classList.remove("selected"));
-  } catch (err) {
-    alert("Error saving personal expense");
-    console.error(err);
-  }
-});
+      if (!category) {
+        alert("Please select a category for Family.");
+        return;
+      }
 
-// ----- FAMILY FORM -----
-document.getElementById("form-family").addEventListener("submit", async (e) => {
-  e.preventDefault();
+      const values = [date, category, amount, comment];
 
-  const date = document.getElementById("family-date").value;
-  const value = document.getElementById("family-value").value;
-  const category = document.querySelector("#form-family .category.selected")?.textContent || "";
-  const comment = document.getElementById("family-comment").value || "";
-
-  if (!category) {
-    alert("Please select a category");
-    return;
-  }
-
-  const values = [date, value, category, comment];
-
-  try {
-    await submitToSheet(values, "Family");
-    alert("Saved to Family!");
-    e.target.reset();
-    document.querySelectorAll("#form-family .category").forEach((c) => c.classList.remove("selected"));
-  } catch (err) {
-    alert("Error saving family expense");
-    console.error(err);
-  }
-});
-
-// ----- UTILITIES FORM -----
-document.getElementById("form-utilities").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const date = document.getElementById("utilities-date").value;
-  const value = document.getElementById("utilities-value").value;
-  const category = document.getElementById("utility-category").value;
-  const consumption = document.getElementById("utilities-consumption").value;
-  const comment = document.getElementById("utilities-comment").value || "";
-
-  if (!category) {
-    alert("Please select a utility category");
-    return;
+      try {
+        await submitToSheet(values, "Family");
+        alert("Saved to Family.");
+        familyForm.reset();
+        familyForm.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
+        // hide grocery icons and reset date
+        const groceryIconsEl = document.getElementById("grocery-icons");
+        if (groceryIconsEl) groceryIconsEl.style.display = "none";
+        setTodayOnInput(familyForm.querySelector("input[name='date']"));
+      } catch (err) {
+        console.error(err);
+        alert("Failed to save Family.");
+      }
+    });
   }
 
-  const values = [date, category, value, consumption, comment];
-
-  try {
-    await submitToSheet(values, "Utilities");
-    alert("Saved to Utilities!");
-    e.target.reset();
-    document.getElementById("utility-category").value = "";
-    document.querySelectorAll("#form-utilities .category").forEach((c) => c.classList.remove("selected"));
-  } catch (err) {
-    alert("Error saving utility expense");
-    console.error(err);
-  }
-});
+  // UTILITIES
+  const utilitiesForm = document.getElementById("form-utilities");
+  if (utilitiesForm) {
+    // ensure clicking a utility category also sets the hidden input (in case user clicks the img directly)
+    utilitiesForm.querySelectorAll(".category").forEach((cat) => {
+      cat.addEventListener("click", () => {
+        const hidden = utilitiesForm.querySelector("input[name='category']");
+        const value = cat.dataset.value || (cat.textContent || "").trim();
+        if (hidden) hidden.value = value;
+      });

@@ -24,9 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Default date to today
     const today = new Date().toISOString().split('T')[0];
     const dateInput = form.querySelector('input[type="date"]');
-    if(dateInput) dateInput.value = today;
+    if (dateInput) dateInput.value = today;
 
-    // Category selection
+    // Category selection (for Personal/Family text categories)
     const categories = form.querySelectorAll(".category");
     categories.forEach(category => {
       category.addEventListener("click", () => {
@@ -35,34 +35,37 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Utilities icons behavior (fill category with specific value)
-    if(formId === "form-utilities") {
-      const utilityIcons = form.querySelectorAll(".category-icon");
+    // Utilities icons behavior (store category via data-value)
+    if (formId === "form-utilities") {
+      const utilityIcons = form.querySelectorAll(".category");
       utilityIcons.forEach(icon => {
         icon.addEventListener("click", () => {
-          const value = icon.dataset.value; // e.g., "gas", "water", "electricity"
-          // Remove selected class from all
+          // Remove highlight
           utilityIcons.forEach(ic => ic.classList.remove("selected"));
           icon.classList.add("selected");
 
-          // Update the hidden category (or text input if you want)
-          const categoryInput = form.querySelector(".category.selected");
-          categories.forEach(cat => cat.classList.remove("selected"));
-          const matchingCat = Array.from(categories).find(cat => cat.textContent.toLowerCase() === value);
-          if(matchingCat) matchingCat.classList.add("selected");
+          // Save chosen value into hidden input
+          let hiddenInput = form.querySelector("input[name='category']");
+          if (!hiddenInput) {
+            hiddenInput = document.createElement("input");
+            hiddenInput.type = "hidden";
+            hiddenInput.name = "category";
+            form.appendChild(hiddenInput);
+          }
+          hiddenInput.value = icon.dataset.value; // e.g., "gas", "water", "electricity"
         });
       });
     }
 
-    // Amount formatting
+    // Amount formatting (commas instead of dots)
     const amountInput = form.querySelector(".amount");
-    if(amountInput){
+    if (amountInput) {
       amountInput.addEventListener("input", () => {
         let value = amountInput.value;
-        value = value.replace('.', ',').replace(/[^0-9,]/g,'').replace(/,+/g, ',');
-        if(value.includes(',')){
+        value = value.replace('.', ',').replace(/[^0-9,]/g, '').replace(/,+/g, ',');
+        if (value.includes(',')) {
           const [intPart, decPart] = value.split(',');
-          value = intPart + ',' + decPart.slice(0,2);
+          value = intPart + ',' + decPart.slice(0, 2);
         }
         amountInput.value = value;
       });
@@ -74,13 +77,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const date = form.querySelector('input[type="date"]').value;
       const amount = form.querySelector(".amount")?.value.trim().replace(',', '.') || "";
-      const category = form.querySelector(".category.selected")?.textContent || "";
-      const comment = form.querySelector('input[type="text"]#' + formId.split('-')[1] + '-comment')?.value || "";
-      const consumption = form.querySelector('input[type="text"]#' + formId.split('-')[1] + '-consumption')?.value || "";
+      const comment = form.querySelector("input[name='comment']")?.value || "";
 
-      const payload = { 
-        sheetName,             
-        values: [date, category, amount, consumption, comment]  // include consumption here
+      let category = "";
+      let consumption = "";
+
+      if (formId === "form-utilities") {
+        // Category comes from hidden input
+        category = form.querySelector("input[name='category']")?.value || "";
+        consumption = form.querySelector("input[name='consumption']")?.value || "";
+      } else {
+        // Category is text input or selected item
+        category = form.querySelector(".category.selected")?.textContent
+          || form.querySelector("input[name='category']")?.value
+          || "";
+      }
+
+      // Build payload dynamically (no null columns)
+      const values = [date, category, amount];
+      if (formId === "form-utilities") values.push(consumption);
+      values.push(comment);
+
+      const payload = {
+        sheetName,
+        values
       };
 
       try {
@@ -92,12 +112,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const result = await response.json();
 
-        if(response.ok){
+        if (response.ok) {
           alert("Data submitted!");
           form.reset();
+
           // Reset date to today
-          const dateInput = form.querySelector('input[type="date"]');
-          if(dateInput){
+          if (dateInput) {
             const today = new Date().toISOString().split('T')[0];
             dateInput.value = today;
           }
@@ -106,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
           alert("Failed to submit data. Check console.");
         }
 
-      } catch(err){
+      } catch (err) {
         console.error("Error submitting to serverless function:", err);
         alert("Failed to submit data. Check console.");
       }
@@ -116,4 +136,3 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 });
-

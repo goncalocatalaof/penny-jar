@@ -114,17 +114,20 @@
       <div class="form-group">
         <label>Category</label>
         <div class="categories">
-          <div class="category">
+          <div class="category" data-value="Water">
             <img src="/images/water.png" alt="Water" class="utility-icon">
           </div>
-          <div class="category">
+          <div class="category" data-value="Electricity">
             <img src="/images/electricity.png" alt="Electricity" class="utility-icon">
           </div>
-          <div class="category">
+          <div class="category" data-value="Gas">
             <img src="/images/gas.png" alt="Gas" class="utility-icon">
           </div>
         </div>
       </div>
+        
+        <!-- Hidden input to store the clicked category -->
+  <input type="hidden" name="category" id="utility-category">
         
         <div class="form-group">
           <label>Value:</label>
@@ -133,7 +136,7 @@
 
         <div class="form-group">
           <label>Consumption:</label>
-          <input type="text" inputmode="numeric" placeholder="0" id="utilities-consumption" class='consumption' required />
+          <input type="text" inputmode="numeric" placeholder="kWh / m3 / L" id="utilities-consumption" class='consumption' required />
         </div>
 
         <div class="form-group">
@@ -163,6 +166,7 @@
   <script src="script.js"></script>
 </body>
 </html>
+
 
 
 

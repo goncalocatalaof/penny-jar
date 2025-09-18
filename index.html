@@ -15,7 +15,6 @@
 
   <!-- Optional: iOS status bar color -->
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  
 </head>
 <body>
   <main id="app">
@@ -25,12 +24,12 @@
       <form id="form-personal">
         <div class="form-group">
           <label>Date:</label>
-          <input type="date" id="personal-date" required />
+          <input type="date" name="date" id="personal-date" required />
         </div>
 
         <div class="form-group">
           <label>Amount:</label>
-          <input type="text" inputmode="decimal" placeholder="0,00" id="personal-value" class='amount' required />
+          <input type="text" name="amount" inputmode="decimal" placeholder="0,00" id="personal-value" class="amount" required />
         </div>
 
         <div class="form-group">
@@ -50,7 +49,7 @@
 
         <div class="form-group">
           <label>Comment:</label>
-          <input type="text" id="personal-comment" />
+          <input type="text" name="comment" id="personal-comment" />
         </div>
 
         <button type="submit">Save</button>
@@ -59,16 +58,16 @@
 
     <!-- Family Expense View -->
     <section id="family" class="view">
-      <h2> Family Expense</h2>
+      <h2>Family Expense</h2>
       <form id="form-family">
         <div class="form-group">
           <label>Date:</label>
-          <input type="date" id="family-date" required />
+          <input type="date" name="date" id="family-date" required />
         </div>
 
         <div class="form-group">
           <label>Amount:</label>
-          <input type="text" inputmode="decimal" placeholder="0,00" id="family-value" class='amount' required />
+          <input type="text" name="amount" inputmode="decimal" placeholder="0,00" id="family-value" class="amount" required />
         </div>
 
         <div class="form-group">
@@ -85,17 +84,14 @@
           </div>
         </div>
 
-
         <div class="form-group">
           <label>Comment:</label>
-
           <div id="grocery-icons" style="display:none;">
-          <img src="images/continente.png" data-word="Continente" class="grocery-icon" alt="Continente" title="Continente" />
-          <img src="images/pingo_doce.png" data-word="Pingo Doce" class="grocery-icon" alt="Pingo Doce" title="Pingo Doce" />
-          <img src="images/mundifruta.png" data-word="Mundifruta" class="grocery-icon" alt="Fruit" title="Fruit" />
+            <img src="images/continente.png" data-word="Continente" class="grocery-icon" alt="Continente" title="Continente" />
+            <img src="images/pingo_doce.png" data-word="Pingo Doce" class="grocery-icon" alt="Pingo Doce" title="Pingo Doce" />
+            <img src="images/mundifruta.png" data-word="Mundifruta" class="grocery-icon" alt="Fruit" title="Fruit" />
           </div>
-          
-          <input type="text" id="family-comment" />
+          <input type="text" name="comment" id="family-comment" />
         </div>
 
         <button type="submit">Save</button>
@@ -108,40 +104,39 @@
       <form id="form-utilities">
         <div class="form-group">
           <label>Date:</label>
-          <input type="date" id="utilities-date" required />
+          <input type="date" name="date" id="utilities-date" required />
         </div>
 
-      <div class="form-group">
-        <label>Category</label>
-        <div class="categories">
-          <div class="category" data-value="Water">
-            <img src="/images/water.png" alt="Water" class="utility-icon">
+        <div class="form-group">
+          <label>Category <span style="color:red">*</span></label>
+          <div class="categories">
+            <div class="category" data-value="Water">
+              <img src="images/water.png" alt="Water" class="utility-icon">
+            </div>
+            <div class="category" data-value="Electricity">
+              <img src="images/electricity.png" alt="Electricity" class="utility-icon">
+            </div>
+            <div class="category" data-value="Gas">
+              <img src="images/gas.png" alt="Gas" class="utility-icon">
+            </div>
           </div>
-          <div class="category" data-value="Electricity">
-            <img src="/images/electricity.png" alt="Electricity" class="utility-icon">
-          </div>
-          <div class="category" data-value="Gas">
-            <img src="/images/gas.png" alt="Gas" class="utility-icon">
-          </div>
+          <!-- Hidden input to store clicked category -->
+          <input type="hidden" name="category" id="utility-category" required />
         </div>
-      </div>
-        
-        <!-- Hidden input to store the clicked category -->
-  <input type="hidden" name="category" id="utility-category">
-        
+
         <div class="form-group">
           <label>Value:</label>
-          <input type="text" inputmode="decimal" placeholder="0,00" id="utilities-value" class='amount' required />
+          <input type="text" name="amount" inputmode="decimal" placeholder="0,00" id="utilities-value" class="amount" required />
         </div>
 
         <div class="form-group">
           <label>Consumption:</label>
-          <input type="text" inputmode="numeric" placeholder="kWh / m3 / L" id="utilities-consumption" class='consumption' required />
+          <input type="text" name="consumption" inputmode="numeric" placeholder="kWh / m3 / L" id="utilities-consumption" class="consumption" required />
         </div>
 
         <div class="form-group">
           <label>Comment:</label>
-          <input type="text" id="utilities-comment" />
+          <input type="text" name="comment" id="utilities-comment" />
         </div>
 
         <button type="submit">Save</button>
@@ -166,11 +161,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-

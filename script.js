@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const values = [date, category, amount, comment];
 
       try {
-        await submitToSheet(values, "Personal1");
+        await submitToSheet(values, "Personal");
         alert("Saved to Personal.");
         personalForm.reset();
         personalForm.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
@@ -159,3 +159,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+

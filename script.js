@@ -40,15 +40,22 @@ document.addEventListener("DOMContentLoaded", () => {
     Vehicle: ["", "tax", "maintenance", "insurance", "repair"],
   };
 
+  // Renders clickable "type" boxes in the same style as categories (reusing .categories/.category CSS)
+  // Requires HTML in Family form:
+  // - <div id="family-type-group" style="display:none;">
+  //     <div class="categories" id="family-type-options"></div>
+  //     <input type="hidden" id="family-type" name="type" />
+  //   </div>
   function setFamilyTypeUI(category) {
     const group = document.getElementById("family-type-group");
-    const select = document.getElementById("family-type");
-    if (!group || !select) return;
+    const optionsWrap = document.getElementById("family-type-options");
+    const hidden = document.getElementById("family-type");
+    if (!group || !optionsWrap || !hidden) return;
 
     const hideAndClear = () => {
       group.style.display = "none";
-      select.innerHTML = "";
-      select.value = "";
+      optionsWrap.innerHTML = "";
+      hidden.value = "";
     };
 
     if (!category) return hideAndClear();
@@ -56,27 +63,34 @@ document.addEventListener("DOMContentLoaded", () => {
     // Force child without showing UI
     if (FAMILY_FORCE_CHILD.has(category)) {
       hideAndClear();
-      // Keep a value available for submit
-      select.innerHTML = `<option value="child">child</option>`;
-      select.value = "child";
+      hidden.value = "child";
       return;
     }
 
-    // Show select for Health / Vehicle
     const options = FAMILY_TYPE_OPTIONS[category];
     if (!options) return hideAndClear();
 
     group.style.display = "block";
-    select.innerHTML = options
-      .map((v) =>
-        v === ""
-          ? `<option value="">(none)</option>`
-          : `<option value="${v}">${v}</option>`
-      )
+    hidden.value = ""; // default none
+
+    optionsWrap.innerHTML = options
+      .map((v) => {
+        const label = v === "" ? "None" : v;
+        const value = v; // "" stays ""
+        return `<div class="category" data-type="${value}">${label}</div>`;
+      })
       .join("");
 
-    // default = none
-    select.value = "";
+    // Click handler for type boxes (scoped to this render)
+    optionsWrap.querySelectorAll(".category").forEach((el) => {
+      el.addEventListener("click", () => {
+        optionsWrap
+          .querySelectorAll(".category")
+          .forEach((c) => c.classList.remove("selected"));
+        el.classList.add("selected");
+        hidden.value = el.dataset.type ?? "";
+      });
+    });
   }
 
   // CATEGORY SELECTION
@@ -85,7 +99,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const categoryDiv = ev.target.closest(".category");
       if (!categoryDiv) return;
 
-      // Clear previous selection
+      // Ignore clicks on the "Type" boxes here (they have their own handler)
+      if (container.id === "family-type-options") return;
+
+      // Clear previous selection (only inside this container)
       container
         .querySelectorAll(".category")
         .forEach((c) => c.classList.remove("selected"));
@@ -193,12 +210,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Type logic (Family)
       let type = "";
-      const typeSelect = document.getElementById("family-type");
-
       if (FAMILY_FORCE_CHILD.has(category)) {
         type = "child";
-      } else if (typeSelect) {
-        type = (typeSelect.value || "").trim(); // "" => null (empty cell)
+      } else {
+        type = (document.getElementById("family-type")?.value || "").trim(); // "" => empty cell
       }
 
       // Family sheet expects: Date, Category, Amount, Comments, Type
@@ -208,13 +223,15 @@ document.addEventListener("DOMContentLoaded", () => {
         await submitToSheet(values, "Family");
         alert("Saved to Family.");
         familyForm.reset();
+
         familyForm
           .querySelectorAll(".category")
           .forEach((c) => c.classList.remove("selected"));
+
         const groceryIconsEl = document.getElementById("grocery-icons");
         if (groceryIconsEl) groceryIconsEl.style.display = "none";
 
-        // Reset Type UI
+        // Reset Type UI + hidden value
         setFamilyTypeUI("");
 
         setTodayOnInput(familyForm.querySelector("input[name='date']"));

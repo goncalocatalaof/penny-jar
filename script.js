@@ -30,14 +30,14 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll('input[type="date"]').forEach(setTodayOnInput);
 
   // --- FAMILY: Type rules ---
-  // These categories always send type="child" and do NOT show the Type UI
+  // These categories always send type="Child" and do NOT show the Type UI
   const FAMILY_FORCE_CHILD = new Set(["Education", "Gear", "Play", "Clothing"]);
 
   // Categories that show a Type selector and their allowed values
   // "" means (none) / null
   const FAMILY_TYPE_OPTIONS = {
-    Health: ["", "child"],
-    Vehicle: ["", "tax", "maintenance", "insurance", "repair"],
+    Health: ["Child"],
+    Vehicle: ["Tax", "Maintenance", "Insurance", "Repair"],
   };
 
   // Renders clickable "type" boxes in the same style as categories (reusing .categories/.category CSS)
@@ -280,3 +280,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+

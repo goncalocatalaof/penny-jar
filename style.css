@@ -179,3 +179,51 @@ input[type="date"] {
 }
 
 
+
+
+/* Bottom nav + button */
+.bottom-nav .nav-add {
+  font-size: 1.6rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: #0A84FF;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -16px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+}
+
+
+/* Inline validation */
+.input-error {
+  border-color: #FF3B30 !important;
+}
+
+.field-error {
+  color: #FF3B30;
+  font-size: 0.85rem;
+  margin-top: 0.35rem;
+}
+
+.form-message {
+  padding: 0.75rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid #D1D1D6;
+}
+
+.form-message.error {
+  background: rgba(255, 59, 48, 0.08);
+  border-color: rgba(255, 59, 48, 0.35);
+  color: #C1271A;
+}
+
+.form-message.success {
+  background: rgba(52, 199, 89, 0.10);
+  border-color: rgba(52, 199, 89, 0.35);
+  color: #1E7D35;
+}

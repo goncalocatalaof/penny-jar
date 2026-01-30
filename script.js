@@ -140,8 +140,8 @@ async function submitToSheet(values, sheetName) {
 const FAMILY_FORCE_CHILD = new Set(["Education", "Gear", "Play", "Clothing"]);
 
 const FAMILY_TYPE_OPTIONS = {
-  Health: ["child"],
-  Vehicle: ["tax", "maintenence", "insurance", "repair"],
+  Health: ["Child"],
+  Vehicle: ["Tax", "Maintenence", "Insurance", "Repair"],
 };
 
 function clearFamilyTypeUI() {
@@ -251,14 +251,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const comment = personalForm.querySelector("input[name='comment']")?.value || "";
 
       if (!category) {
-        showFieldError(personalForm.querySelector(".categories"), "Seleciona uma categoria.");
+        showFieldError(personalForm.querySelector(".categories"), "Select one category.");
         return;
       }
 
       if (!isValidMoneyInput(amountRaw)) {
         showFieldError(
           amountEl,
-          "Valor inválido. Só números e um separador decimal (vírgula OU ponto). Sem negativos."
+          "Invalid value. Use only numbers with a comma or dot."
         );
         return;
       }
@@ -270,13 +270,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       try {
         await submitToSheet(values, "Personal");
-        showFormMessage(personalForm, "Registo guardado.", "success");
+        showFormMessage(personalForm, "Saved successfully.", "success");
         personalForm.reset();
         personalForm.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
         setTodayOnInput(personalForm.querySelector("input[name='date']"));
       } catch (err) {
         console.error(err);
-        showFormMessage(personalForm, "Erro ao guardar. Tenta novamente.", "error");
+        showFormMessage(personalForm, "Save failed. Please try again.", "error");
       }
     });
   }
@@ -298,7 +298,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const comment = familyForm.querySelector("input[name='comment']")?.value || "";
 
       if (!category) {
-        showFieldError(familyForm.querySelector(".categories"), "Seleciona uma categoria.");
+        showFieldError(familyForm.querySelector(".categories"), "Select one category.");
         return;
       }
 
@@ -306,7 +306,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // IMPORTANT: show error on FAMILY (scoped)
         showFieldError(
           amountEl,
-          "Valor inválido. Só números e um separador decimal (vírgula OU ponto). Sem negativos."
+          "Invalid value. Use only numbers with a comma or dot."
         );
         return;
       }
@@ -323,7 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       try {
         await submitToSheet(values, "Family");
-        showFormMessage(familyForm, "Registo guardado.", "success");
+        showFormMessage(familyForm, "Saved successfully.", "success");
 
         familyForm.reset();
         familyForm.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
@@ -335,7 +335,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setTodayOnInput(familyForm.querySelector("input[name='date']"));
       } catch (err) {
         console.error(err);
-        showFormMessage(familyForm, "Erro ao guardar. Tenta novamente.", "error");
+        showFormMessage(familyForm, "Save failed. Please try again.", "error");
       }
     });
   }
@@ -357,14 +357,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const comment = utilitiesForm.querySelector("input[name='comment']")?.value || "";
 
       if (!category) {
-        showFieldError(utilitiesForm.querySelector(".categories"), "Seleciona uma categoria.");
+        showFieldError(utilitiesForm.querySelector(".categories"), "Select one category.");
         return;
       }
 
       if (!isValidMoneyInput(valueRaw)) {
         showFieldError(
           valueEl,
-          "Valor inválido. Só números e um separador decimal (vírgula OU ponto). Sem negativos."
+          "Invalid value. Use only numbers with a comma or dot."
         );
         return;
       }
@@ -376,13 +376,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       try {
         await submitToSheet(values, "Utilities");
-        showFormMessage(utilitiesForm, "Registo guardado.", "success");
+        showFormMessage(utilitiesForm, "Saved successfully.", "success");
         utilitiesForm.reset();
         utilitiesForm.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
         setTodayOnInput(utilitiesForm.querySelector("input[name='date']"));
       } catch (err) {
         console.error(err);
-        showFormMessage(utilitiesForm, "Erro ao guardar. Tenta novamente.", "error");
+        showFormMessage(utilitiesForm, "Save failed. Please try again.", "error");
       }
     });
   }
@@ -414,21 +414,21 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!isValidMoneyInput(salaryRaw)) {
         showFieldError(
           salaryEl,
-          "Inválido. Só números e um separador decimal (vírgula OU ponto). Sem negativos."
+          "Invalid value. Use only numbers with a comma or dot."
         );
         ok = false;
       }
       if (!isValidMoneyInput(mealRaw)) {
         showFieldError(
           mealEl,
-          "Inválido. Só números e um separador decimal (vírgula OU ponto). Sem negativos."
+          "Invalid value. Use only numbers with a comma or dot."
         );
         ok = false;
       }
       if (!isValidMoneyInput(extraRaw)) {
         showFieldError(
           extraEl,
-          "Inválido. Só números e um separador decimal (vírgula OU ponto). Sem negativos."
+          "Invalid value. Use only numbers with a comma or dot."
         );
         ok = false;
       }
@@ -448,7 +448,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!(total > 0)) {
         showFormMessage(
           incomeForm,
-          "A soma de Salary + Meal Allowances + Extra tem de ser maior que 0.",
+          "  Please ensure that at least one income type has value.",
           "error"
         );
         // highlight fields (no extra message needed)
@@ -469,13 +469,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
       try {
         await submitToSheet(values, "Income");
-        showFormMessage(incomeForm, "Registo guardado.", "success");
+        showFormMessage(incomeForm, "Saved successfully.", "success");
         incomeForm.reset();
         setTodayOnInput(dateInput);
       } catch (err) {
         console.error(err);
-        showFormMessage(incomeForm, "Erro ao guardar. Tenta novamente.", "error");
+        showFormMessage(incomeForm, "Save failed. Please try again.", "error");
       }
     });
   }
 });
+

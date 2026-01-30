@@ -173,7 +173,7 @@ function setFamilyTypeUIForCategory(category) {
   // Forced categories -> type=child silently, no UI
   if (FAMILY_FORCE_CHILD.has(category)) {
     hideAndClear();
-    hidden.value = "child";
+    hidden.value = "Child";
     return;
   }
 
@@ -479,4 +479,5 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
 

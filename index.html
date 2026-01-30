@@ -163,6 +163,40 @@
       <h2>Dashboard (Coming Soon)</h2>
       <p>Statistics and charts will be here.</p>
     </section>
+  
+    <!-- Income View -->
+    <section id="income" class="view">
+      <h2>Income</h2>
+      <form id="form-income">
+        <div class="form-group">
+          <label>Date:</label>
+          <input type="date" name="date" id="income-date" />
+        </div>
+
+        <div class="form-group">
+          <label>Salary:</label>
+          <input type="text" name="salary" inputmode="decimal" placeholder="0,00" id="income-salary" class="amount" />
+        </div>
+
+        <div class="form-group">
+          <label>Meal Allowances:</label>
+          <input type="text" name="mealAllowances" inputmode="decimal" placeholder="0,00" id="income-meal-allowances" class="amount" />
+        </div>
+
+        <div class="form-group">
+          <label>Extra:</label>
+          <input type="text" name="extra" inputmode="decimal" placeholder="0,00" id="income-extra" class="amount" />
+        </div>
+
+        <div class="form-group">
+          <label>Comments:</label>
+          <input type="text" name="comment" id="income-comment" />
+        </div>
+
+        <button type="submit">Save</button>
+      </form>
+    </section>
+
   </main>
 
   <!-- Bottom Navigation -->
@@ -171,13 +205,9 @@
     <button onclick="navigate('family')">Family</button>
     <button onclick="navigate('utilities')">Utilities</button>
     <button onclick="navigate('dashboard')">Dashboard</button>
+    <button class="nav-add" aria-label="Add income" onclick="navigate('income')">+</button>
   </nav>
 
   <script src="script.js"></script>
 </body>
 </html>
-
-
-
-
-

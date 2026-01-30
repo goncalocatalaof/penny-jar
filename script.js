@@ -1,28 +1,36 @@
+// ==============================
 // Navigation
+// ==============================
 function navigate(viewId) {
   document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
   document.getElementById(viewId).classList.add("active");
 }
 
-// Set today’s date
+// ==============================
+// Date helpers
+// ==============================
 function setTodayOnInput(inputEl) {
   if (!inputEl) return;
   inputEl.value = new Date().toISOString().split("T")[0];
 }
 
-
-// Money input validation: only digits plus optional ONE decimal separator (comma OR dot).
-// No negatives, no thousand separators. Empty string is allowed (treated as 0 when summing).
+// ==============================
+// Strict money validation
+// Rules:
+// - allow empty
+// - only digits + optional ONE separator (comma OR dot)
+// - no negatives
+// - no thousand separators
+// - no both comma and dot
+// - separator not first/last
+// ==============================
 function isValidMoneyInput(raw) {
   const s = (raw ?? "").toString().trim();
-  if (!s) return true; // allow empty
-  // Disallow negatives
-  if (s.startsWith("-")) return false;
+  if (!s) return true;
 
-  // Only digits, comma, dot
+  if (s.startsWith("-")) return false;
   if (!/^[0-9.,]+$/.test(s)) return false;
 
-  // Only one separator (either comma or dot) total, and not both.
   const hasComma = s.includes(",");
   const hasDot = s.includes(".");
   if (hasComma && hasDot) return false;
@@ -30,10 +38,7 @@ function isValidMoneyInput(raw) {
   const sep = hasComma ? "," : hasDot ? "." : null;
   if (!sep) return true;
 
-  // Must have at most one separator occurrence
-  if (s.split(sep).length - 1 > 1) return false;
-
-  // Separator cannot be first or last (optional rule, matches "Amount" behavior)
+  if ((s.split(sep).length - 1) > 1) return false;
   if (s.startsWith(sep) || s.endsWith(sep)) return false;
 
   return true;
@@ -52,32 +57,34 @@ function moneyToNumber(raw) {
   return Number.isFinite(n) ? n : NaN;
 }
 
-// Inline error helpers
-function clearInlineErrors(form) {
-  if (!form) return;
-  form.querySelectorAll(".field-error").forEach((el) => el.remove());
-  form.querySelectorAll(".input-error").forEach((el) => el.classList.remove("input-error"));
-  const msg = form.querySelector(".form-message");
+// ==============================
+// Inline error helpers (scoped to the form)
+// ==============================
+function clearInlineErrors(formEl) {
+  if (!formEl) return;
+  formEl.querySelectorAll(".field-error").forEach((el) => el.remove());
+  formEl.querySelectorAll(".input-error").forEach((el) => el.classList.remove("input-error"));
+  const msg = formEl.querySelector(".form-message");
   if (msg) msg.remove();
 }
 
-function showFormMessage(form, message, kind = "error") {
-  if (!form) return;
-  // Remove previous message
-  const existing = form.querySelector(".form-message");
+function showFormMessage(formEl, message, kind = "error") {
+  if (!formEl) return;
+
+  const existing = formEl.querySelector(".form-message");
   if (existing) existing.remove();
 
   const div = document.createElement("div");
   div.className = `form-message ${kind}`;
   div.textContent = message;
 
-  // Put message right under the <h2> visually (top of form)
-  form.insertBefore(div, form.firstChild);
+  formEl.insertBefore(div, formEl.firstChild);
 }
 
 function showFieldError(anchorEl, message) {
   if (!anchorEl) return;
-  // Remove existing error right after this field/group if present
+
+  // remove existing inline error directly after this anchor
   const next = anchorEl.nextElementSibling;
   if (next && next.classList.contains("field-error")) next.remove();
 
@@ -88,7 +95,7 @@ function showFieldError(anchorEl, message) {
     anchorEl.insertAdjacentElement("afterend", err);
   }
 
-  // Highlight only inputs/textareas/selects; for groups (like .categories) just show message
+  // highlight only form controls
   if (anchorEl.matches && anchorEl.matches("input, textarea, select")) {
     anchorEl.classList.add("input-error");
     anchorEl.addEventListener(
@@ -103,7 +110,9 @@ function showFieldError(anchorEl, message) {
   }
 }
 
-// Submit to Google Sheets via API
+// ==============================
+// API submit
+// ==============================
 async function submitToSheet(values, sheetName) {
   const res = await fetch("/api/submit", {
     method: "POST",
@@ -119,137 +128,151 @@ async function submitToSheet(values, sheetName) {
   return res.json().catch(() => ({}));
 }
 
-// Family Type rules
+// ==============================
+// FAMILY: Type rules + UI (clickable boxes like categories)
+// Requires in Family form HTML:
+// <div id="family-type-group" style="display:none;">
+//   <label>Type</label>
+//   <div class="categories" id="family-type-options"></div>
+//   <input type="hidden" id="family-type" name="type" />
+// </div>
+// ==============================
 const FAMILY_FORCE_CHILD = new Set(["Education", "Gear", "Play", "Clothing"]);
 
-function setFamilyTypeUI(value) {
-  const typeWrap = document.getElementById("family-type-wrap");
-  const typeSelect = document.getElementById("family-type");
-  if (!typeWrap || !typeSelect) return;
+const FAMILY_TYPE_OPTIONS = {
+  Health: ["child"],
+  Vehicle: ["tax", "maintenence", "insurance", "repair"],
+};
 
-  if (value === "__HIDE__") {
-    typeWrap.style.display = "none";
-    typeSelect.value = "";
-    return;
-  }
+function clearFamilyTypeUI() {
+  const group = document.getElementById("family-type-group");
+  const optionsWrap = document.getElementById("family-type-options");
+  const hidden = document.getElementById("family-type");
 
-  typeWrap.style.display = "block";
-  typeSelect.value = value || "";
+  if (group) group.style.display = "none";
+  if (optionsWrap) optionsWrap.innerHTML = "";
+  if (hidden) hidden.value = "";
 }
 
-function updateFamilyTypeOptionsForCategory(category) {
-  const typeSelect = document.getElementById("family-type");
-  if (!typeSelect) return;
+function setFamilyTypeUIForCategory(category) {
+  const group = document.getElementById("family-type-group");
+  const optionsWrap = document.getElementById("family-type-options");
+  const hidden = document.getElementById("family-type");
 
-  // Reset options
-  typeSelect.innerHTML = "";
-  const optEmpty = document.createElement("option");
-  optEmpty.value = "";
-  optEmpty.textContent = "";
-  typeSelect.appendChild(optEmpty);
+  // If the Family type area isn't in the HTML, do nothing (keeps app functional)
+  if (!group || !optionsWrap || !hidden) return;
 
-  // Health -> child/null
-  if (category === "Health") {
-    const optChild = document.createElement("option");
-    optChild.value = "child";
-    optChild.textContent = "child";
-    typeSelect.appendChild(optChild);
-    setFamilyTypeUI("");
-    return;
-  }
+  const hideAndClear = () => {
+    group.style.display = "none";
+    optionsWrap.innerHTML = "";
+    hidden.value = "";
+  };
 
-  // Vehicle -> tax/maintenence/insurance/repair/null
-  if (category === "Vehicle") {
-    ["tax", "maintenence", "insurance", "repair"].forEach((v) => {
-      const opt = document.createElement("option");
-      opt.value = v;
-      opt.textContent = v;
-      typeSelect.appendChild(opt);
-    });
-    setFamilyTypeUI("");
-    return;
-  }
+  if (!category) return hideAndClear();
 
-  // Forced child categories: Education, Gear, Play, Clothing
+  // Forced categories -> type=child silently, no UI
   if (FAMILY_FORCE_CHILD.has(category)) {
-    // Hide UI; fill value silently
-    setFamilyTypeUI("__HIDE__");
+    hideAndClear();
+    hidden.value = "child";
     return;
   }
 
-  // Default: show empty only
-  setFamilyTypeUI("");
+  const options = FAMILY_TYPE_OPTIONS[category];
+  if (!options) return hideAndClear();
+
+  group.style.display = "block";
+  hidden.value = ""; // default empty (=null in sheet)
+
+  optionsWrap.innerHTML = options
+    .map((v) => {
+      // show label nicer; stored value is lowercase
+      const label = v.charAt(0).toUpperCase() + v.slice(1);
+      return `<div class="category" data-type="${v}">${label}</div>`;
+    })
+    .join("");
+
+  optionsWrap.querySelectorAll(".category").forEach((el) => {
+    el.addEventListener("click", () => {
+      optionsWrap.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
+      el.classList.add("selected");
+      hidden.value = el.dataset.type ?? "";
+    });
+  });
 }
 
+// ==============================
+// DOM Ready
+// ==============================
 document.addEventListener("DOMContentLoaded", () => {
-  // Set today's date on all date inputs
+  // Default date on all date inputs
   document.querySelectorAll("input[type='date']").forEach(setTodayOnInput);
 
-  // Category selection (shared)
+  // CATEGORY selection (Personal / Family / Utilities)
   document.querySelectorAll(".categories").forEach((container) => {
     container.addEventListener("click", (e) => {
+      // Ignore clicks in Family Type options container (handled by its own listeners)
+      if (container.id === "family-type-options") return;
+
       const btn = e.target.closest(".category");
       if (!btn) return;
 
       container.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
       btn.classList.add("selected");
 
-      // Family type logic only within Family view
-      const familyView = btn.closest("#family");
-      if (familyView) {
-        const cat = btn.textContent.trim();
-        updateFamilyTypeOptionsForCategory(cat);
+      const cat = btn.textContent.trim();
+
+      // Family: update type UI based on selected category
+      if (btn.closest("#family")) {
+        setFamilyTypeUIForCategory(cat);
       }
 
-      // Grocery icons toggle (example existing behavior)
+      // Optional: Grocery icons toggle (if element exists)
       const groceryIconsEl = document.getElementById("grocery-icons");
       if (groceryIconsEl) {
-        const cat = btn.textContent.trim();
         groceryIconsEl.style.display = cat === "Grocery" ? "flex" : "none";
       }
     });
   });
 
+  // ==========================
   // PERSONAL
+  // ==========================
   const personalForm = document.getElementById("form-personal");
   if (personalForm) {
     personalForm.addEventListener("submit", async (e) => {
       e.preventDefault();
+      clearInlineErrors(personalForm);
 
-      clearInlineErrors(e.target);
-
-      const date = personalForm.querySelector("input[name='date']").value || "";
+      const date = personalForm.querySelector("input[name='date']")?.value || "";
       const category =
         personalForm.querySelector(".category.selected")?.textContent?.trim() || "";
-      const amountRaw =
-        personalForm.querySelector("input[name='amount']")?.value?.trim() || "";
-
-      if (!isValidMoneyInput(amountRaw)) {
-        showFieldError(
-          personalForm.querySelector("input[name='amount']"),
-          "Valor inválido. Usa apenas números e um separador decimal (vírgula OU ponto)."
-        );
-        return;
-      }
-
-      const amount = normalizeMoneyInput(amountRaw);
-      const comment = personalForm.querySelector("input[name='comment']").value || "";
+      const amountEl = personalForm.querySelector("input[name='amount']");
+      const amountRaw = amountEl?.value?.trim() || "";
+      const comment = personalForm.querySelector("input[name='comment']")?.value || "";
 
       if (!category) {
         showFieldError(personalForm.querySelector(".categories"), "Seleciona uma categoria.");
         return;
       }
 
-      // Personal sheet expects: Date, Category, Amount, Comments
+      if (!isValidMoneyInput(amountRaw)) {
+        showFieldError(
+          amountEl,
+          "Valor inválido. Só números e um separador decimal (vírgula OU ponto). Sem negativos."
+        );
+        return;
+      }
+
+      const amount = normalizeMoneyInput(amountRaw);
+
+      // Sheet Personal: Date; Category; Amount; Comments  (Timestamp is auto on backend if present)
       const values = [date, category, amount, comment];
 
       try {
         await submitToSheet(values, "Personal");
         showFormMessage(personalForm, "Registo guardado.", "success");
         personalForm.reset();
-        personalForm
-          .querySelectorAll(".category")
-          .forEach((c) => c.classList.remove("selected"));
+        personalForm.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
         setTodayOnInput(personalForm.querySelector("input[name='date']"));
       } catch (err) {
         console.error(err);
@@ -258,63 +281,57 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ==========================
   // FAMILY
+  // ==========================
   const familyForm = document.getElementById("form-family");
   if (familyForm) {
     familyForm.addEventListener("submit", async (e) => {
       e.preventDefault();
+      clearInlineErrors(familyForm);
 
-      clearInlineErrors(e.target);
-
-      const date = familyForm.querySelector("input[name='date']").value || "";
+      const date = familyForm.querySelector("input[name='date']")?.value || "";
       const category =
         familyForm.querySelector(".category.selected")?.textContent?.trim() || "";
-      const amountRaw =
-        familyForm.querySelector("input[name='amount']")?.value?.trim() || "";
-
-      // ✅ FIX: errors now show on FAMILY, not PERSONAL
-      if (!isValidMoneyInput(amountRaw)) {
-        showFieldError(
-          familyForm.querySelector("input[name='amount']"),
-          "Valor inválido. Usa apenas números e um separador decimal (vírgula OU ponto)."
-        );
-        return;
-      }
-
-      const amount = normalizeMoneyInput(amountRaw);
-      const comment = familyForm.querySelector("input[name='comment']").value || "";
+      const amountEl = familyForm.querySelector("input[name='amount']");
+      const amountRaw = amountEl?.value?.trim() || "";
+      const comment = familyForm.querySelector("input[name='comment']")?.value || "";
 
       if (!category) {
         showFieldError(familyForm.querySelector(".categories"), "Seleciona uma categoria.");
         return;
       }
 
-      // Type logic (Family)
-      let type = "";
-      if (FAMILY_FORCE_CHILD.has(category)) {
-        type = "child";
-      } else {
-        type = (document.getElementById("family-type")?.value || "").trim(); // "" => empty cell
+      if (!isValidMoneyInput(amountRaw)) {
+        // IMPORTANT: show error on FAMILY (scoped)
+        showFieldError(
+          amountEl,
+          "Valor inválido. Só números e um separador decimal (vírgula OU ponto). Sem negativos."
+        );
+        return;
       }
 
-      // Family sheet expects: Date, Category, Amount, Comments, Type
+      const amount = normalizeMoneyInput(amountRaw);
+
+      // Family type comes from hidden input (set by type UI or forced rules)
+      // - If forced child categories were selected, hidden will already be "child"
+      // - Otherwise, can be "" (null) or one of the options
+      const type = (document.getElementById("family-type")?.value || "").trim();
+
+      // Sheet Family expected order (as per your app): Date; Category; Amount; Comments; Type
       const values = [date, category, amount, comment, type];
 
       try {
         await submitToSheet(values, "Family");
         showFormMessage(familyForm, "Registo guardado.", "success");
-        familyForm.reset();
 
-        familyForm
-          .querySelectorAll(".category")
-          .forEach((c) => c.classList.remove("selected"));
+        familyForm.reset();
+        familyForm.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
 
         const groceryIconsEl = document.getElementById("grocery-icons");
         if (groceryIconsEl) groceryIconsEl.style.display = "none";
 
-        // Reset Type UI + hidden value
-        setFamilyTypeUI("");
-
+        clearFamilyTypeUI();
         setTodayOnInput(familyForm.querySelector("input[name='date']"));
       } catch (err) {
         console.error(err);
@@ -323,47 +340,45 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ==========================
   // UTILITIES
+  // ==========================
   const utilitiesForm = document.getElementById("form-utilities");
   if (utilitiesForm) {
     utilitiesForm.addEventListener("submit", async (e) => {
       e.preventDefault();
+      clearInlineErrors(utilitiesForm);
 
-      clearInlineErrors(e.target);
-
-      const date = utilitiesForm.querySelector("input[name='date']").value || "";
+      const date = utilitiesForm.querySelector("input[name='date']")?.value || "";
       const category =
         utilitiesForm.querySelector(".category.selected")?.textContent?.trim() || "";
-      const valueRaw =
-        utilitiesForm.querySelector("input[name='value']")?.value?.trim() || "";
-      const comment = utilitiesForm.querySelector("input[name='comment']").value || "";
-
-      // Utilities might have different rules; keep simple, allow empty or valid money
-      if (!isValidMoneyInput(valueRaw)) {
-        showFieldError(
-          utilitiesForm.querySelector("input[name='value']"),
-          "Valor inválido. Usa apenas números e um separador decimal (vírgula OU ponto)."
-        );
-        return;
-      }
+      const valueEl = utilitiesForm.querySelector("input[name='value']");
+      const valueRaw = valueEl?.value?.trim() || "";
+      const comment = utilitiesForm.querySelector("input[name='comment']")?.value || "";
 
       if (!category) {
         showFieldError(utilitiesForm.querySelector(".categories"), "Seleciona uma categoria.");
         return;
       }
 
+      if (!isValidMoneyInput(valueRaw)) {
+        showFieldError(
+          valueEl,
+          "Valor inválido. Só números e um separador decimal (vírgula OU ponto). Sem negativos."
+        );
+        return;
+      }
+
       const value = normalizeMoneyInput(valueRaw);
 
-      // Utilities sheet expects: Date, Category, Value, Comments
+      // Sheet Utilities: Date; Category; Value; Comments
       const values = [date, category, value, comment];
 
       try {
         await submitToSheet(values, "Utilities");
         showFormMessage(utilitiesForm, "Registo guardado.", "success");
         utilitiesForm.reset();
-        utilitiesForm
-          .querySelectorAll(".category")
-          .forEach((c) => c.classList.remove("selected"));
+        utilitiesForm.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
         setTodayOnInput(utilitiesForm.querySelector("input[name='date']"));
       } catch (err) {
         console.error(err);
@@ -372,41 +387,54 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ==========================
   // INCOME
+  // ==========================
   const incomeForm = document.getElementById("form-income");
   if (incomeForm) {
     incomeForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-
-      clearInlineErrors(e.target);
+      clearInlineErrors(incomeForm);
 
       const dateInput = incomeForm.querySelector("input[name='date']");
       const date = (dateInput?.value || "").trim() || new Date().toISOString().split("T")[0];
 
-      const salaryRaw = incomeForm.querySelector("input[name='salary']")?.value?.trim() || "";
-      const mealRaw =
-        incomeForm.querySelector("input[name='mealAllowances']")?.value?.trim() || "";
-      const extraRaw = incomeForm.querySelector("input[name='extra']")?.value?.trim() || "";
+      const salaryEl = incomeForm.querySelector("input[name='salary']");
+      const mealEl = incomeForm.querySelector("input[name='mealAllowances']");
+      const extraEl = incomeForm.querySelector("input[name='extra']");
+
+      const salaryRaw = salaryEl?.value?.trim() || "";
+      const mealRaw = mealEl?.value?.trim() || "";
+      const extraRaw = extraEl?.value?.trim() || "";
+
       const comment = incomeForm.querySelector("input[name='comment']")?.value || "";
 
-      if (![salaryRaw, mealRaw, extraRaw].every(isValidMoneyInput)) {
-        showFormMessage(
-          incomeForm,
-          "Valores inválidos. Usa apenas números e um separador decimal (vírgula OU ponto).",
-          "error"
+      // Validate format (strict)
+      let ok = true;
+      if (!isValidMoneyInput(salaryRaw)) {
+        showFieldError(
+          salaryEl,
+          "Inválido. Só números e um separador decimal (vírgula OU ponto). Sem negativos."
         );
-        if (!isValidMoneyInput(salaryRaw))
-          showFieldError(incomeForm.querySelector("input[name='salary']"), "Valor inválido.");
-        if (!isValidMoneyInput(mealRaw))
-          showFieldError(
-            incomeForm.querySelector("input[name='mealAllowances']"),
-            "Valor inválido."
-          );
-        if (!isValidMoneyInput(extraRaw))
-          showFieldError(incomeForm.querySelector("input[name='extra']"), "Valor inválido.");
-        return;
+        ok = false;
       }
+      if (!isValidMoneyInput(mealRaw)) {
+        showFieldError(
+          mealEl,
+          "Inválido. Só números e um separador decimal (vírgula OU ponto). Sem negativos."
+        );
+        ok = false;
+      }
+      if (!isValidMoneyInput(extraRaw)) {
+        showFieldError(
+          extraEl,
+          "Inválido. Só números e um separador decimal (vírgula OU ponto). Sem negativos."
+        );
+        ok = false;
+      }
+      if (!ok) return;
 
+      // Rule: sum must be > 0
       const salaryNum = moneyToNumber(salaryRaw);
       const mealNum = moneyToNumber(mealRaw);
       const extraNum = moneyToNumber(extraRaw);
@@ -423,18 +451,20 @@ document.addEventListener("DOMContentLoaded", () => {
           "A soma de Salary + Meal Allowances + Extra tem de ser maior que 0.",
           "error"
         );
-        // highlight fields (no specific message needed on each)
-        showFieldError(incomeForm.querySelector("input[name='salary']"), "");
-        showFieldError(incomeForm.querySelector("input[name='mealAllowances']"), "");
-        showFieldError(incomeForm.querySelector("input[name='extra']"), "");
+        // highlight fields (no extra message needed)
+        showFieldError(salaryEl, "");
+        showFieldError(mealEl, "");
+        showFieldError(extraEl, "");
         return;
       }
 
+      // Store with dot only
       const salary = normalizeMoneyInput(salaryRaw);
       const mealAllowances = normalizeMoneyInput(mealRaw);
       const extra = normalizeMoneyInput(extraRaw);
 
-      // Income sheet expects: Date, Salary, Meal Allowances, Extra, Comments (Timestamp auto)
+      // Sheet Income columns: Timestamp(auto); Date; Salary; Meal Allowances; Extra; Comments
+      // -> we send: Date; Salary; Meal Allowances; Extra; Comments
       const values = [date, salary, mealAllowances, extra, comment];
 
       try {

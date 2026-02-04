@@ -5,14 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PennyJar — Joana</title>
 
-    <!-- iOS Web App hints -->
+    <!-- iOS standalone -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  </head>
-  <body>
+
+    <!-- MUITO IMPORTANTE: NÃO incluir o manifest aqui -->
+    <!-- <link rel="manifest" href="manifest.json"> -->
+
+    <!-- Diz ao JS qual a view default desta “entrada” -->
     <script>
-      // Entry point específico para Joana
-      location.replace("./index.html?view=joana");
+      window.__PENNYJAR_DEFAULT_VIEW__ = "joana";
     </script>
+
+    <!-- Os mesmos assets da tua app -->
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+
+  <body>
+    <!-- Aqui tens 2 opções:
+         A) duplicar o mesmo HTML do index (mais fiável)
+         B) ou, se o teu index.html já tem todo o layout, então joana.html tem de ter o mesmo layout.
+         Ou seja: para abrir a view Joana, joana.html precisa das mesmas <section class="view">... -->
+    
+    <!-- ✅ RECOMENDADO: copia o BODY do teu index.html para aqui (menus + views) -->
+
+    <script src="./app.js"></script>
   </body>
 </html>

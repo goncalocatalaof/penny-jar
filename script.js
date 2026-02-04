@@ -1,27 +1,38 @@
 // ==============================
-// Navigation + Deep linking (URL hash)
+// Navigation + Deep linking (query + hash)
+// Supports:
+//   /?view=joana      (PWA start_url / iOS shortcuts)
+//   /#joana           (browser deep link)
 // Examples:
 //   /#personal  /#family  /#utilities  /#income  /#joana
 // ==============================
 function navigate(viewId, { updateHash = true } = {}) {
   document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
 
-  const target = document.getElementById(viewId);
-  if (target) {
-    target.classList.add("active");
-    if (updateHash) window.location.hash = `#${viewId}`;
-  }
+  const el = document.getElementById(viewId);
+  if (!el) return;
+
+  el.classList.add("active");
+  if (updateHash) window.location.hash = `#${viewId}`;
+}
+
+function getInitialViewId(defaultViewId = "personal") {
+  // 1) Query param (iOS Home Screen / manifest shortcuts)
+  const params = new URLSearchParams(window.location.search);
+  const q = (params.get("view") || "").trim();
+  if (q && document.getElementById(q)) return q;
+
+  // 2) Hash (regular deep links)
+  const h = (window.location.hash || "").replace("#", "").trim();
+  if (h && document.getElementById(h)) return h;
+
+  return defaultViewId;
 }
 
 function openViewFromUrlOrDefault(defaultViewId = "personal") {
-  const raw = (window.location.hash || "").replace("#", "").trim();
-  const viewId = raw || defaultViewId;
-
-  if (document.getElementById(viewId)) {
-    navigate(viewId, { updateHash: !!raw }); // if no hash, don't force one
-  } else {
-    navigate(defaultViewId, { updateHash: false });
-  }
+  const viewId = getInitialViewId(defaultViewId);
+  // Don't force-writing hash on initial open (keeps ?view=... clean)
+  navigate(viewId, { updateHash: false });
 }
 
 // ==============================
@@ -221,14 +232,16 @@ function setFamilyTypeUIForCategory(category) {
 // DOM Ready
 // ==============================
 document.addEventListener("DOMContentLoaded", () => {
-  // Open correct view from URL (/#joana etc.) or default
+  // Open correct view from URL (?view=... or #...) or default
   openViewFromUrlOrDefault("personal");
 
   // React to back/forward or manual hash changes
   window.addEventListener("hashchange", () => {
-    // when hash changes, navigate without re-writing the hash
     const raw = (window.location.hash || "").replace("#", "").trim();
-    if (raw) navigate(raw, { updateHash: false });
+    if (raw && document.getElementById(raw)) {
+      // navigate without re-writing the hash
+      navigate(raw, { updateHash: false });
+    }
   });
 
   // Default date on all date inputs

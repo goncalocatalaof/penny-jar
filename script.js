@@ -256,16 +256,13 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (!isValidMoneyInput(amountRaw)) {
-        showFieldError(
-          amountEl,
-          "Invalid value. Use only numbers with a comma or dot."
-        );
+        showFieldError(amountEl, "Invalid value. Use only numbers with a comma or dot.");
         return;
       }
 
       const amount = normalizeMoneyInput(amountRaw);
 
-      // Sheet Personal: Date; Category; Amount; Comments  (Timestamp is auto on backend if present)
+      // Sheet Personal: Date; Category; Amount; Comments
       const values = [date, category, amount, comment];
 
       try {
@@ -286,6 +283,26 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================
   const familyForm = document.getElementById("form-family");
   if (familyForm) {
+    // Grocery icons -> fill family comment (works with <img data-word="...">)
+    const groceryIconsEl = document.getElementById("grocery-icons");
+    const familyCommentInput =
+      document.getElementById("family-comment") ||
+      familyForm.querySelector("input[name='comment']");
+
+    if (groceryIconsEl && familyCommentInput) {
+      groceryIconsEl.addEventListener("click", (e) => {
+        const img = e.target.closest("img.grocery-icon");
+        if (!img) return;
+
+        const word = img.dataset.word;
+        if (!word) return;
+
+        // Fill comment with selected grocery store
+        familyCommentInput.value = word;
+        familyCommentInput.focus();
+      });
+    }
+
     familyForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       clearInlineErrors(familyForm);
@@ -303,22 +320,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (!isValidMoneyInput(amountRaw)) {
-        // IMPORTANT: show error on FAMILY (scoped)
-        showFieldError(
-          amountEl,
-          "Invalid value. Use only numbers with a comma or dot."
-        );
+        showFieldError(amountEl, "Invalid value. Use only numbers with a comma or dot.");
         return;
       }
 
       const amount = normalizeMoneyInput(amountRaw);
 
-      // Family type comes from hidden input (set by type UI or forced rules)
-      // - If forced child categories were selected, hidden will already be "child"
-      // - Otherwise, can be "" (null) or one of the options
       const type = (document.getElementById("family-type")?.value || "").trim();
 
-      // Sheet Family expected order (as per your app): Date; Category; Amount; Comments; Type
+      // Sheet Family: Date; Category; Amount; Comments; Type
       const values = [date, category, amount, comment, type];
 
       try {
@@ -328,7 +338,6 @@ document.addEventListener("DOMContentLoaded", () => {
         familyForm.reset();
         familyForm.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
 
-        const groceryIconsEl = document.getElementById("grocery-icons");
         if (groceryIconsEl) groceryIconsEl.style.display = "none";
 
         clearFamilyTypeUI();
@@ -362,10 +371,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (!isValidMoneyInput(valueRaw)) {
-        showFieldError(
-          valueEl,
-          "Invalid value. Use only numbers with a comma or dot."
-        );
+        showFieldError(valueEl, "Invalid value. Use only numbers with a comma or dot.");
         return;
       }
 
@@ -412,24 +418,15 @@ document.addEventListener("DOMContentLoaded", () => {
       // Validate format (strict)
       let ok = true;
       if (!isValidMoneyInput(salaryRaw)) {
-        showFieldError(
-          salaryEl,
-          "Invalid value. Use only numbers with a comma or dot."
-        );
+        showFieldError(salaryEl, "Invalid value. Use only numbers with a comma or dot.");
         ok = false;
       }
       if (!isValidMoneyInput(mealRaw)) {
-        showFieldError(
-          mealEl,
-          "Invalid value. Use only numbers with a comma or dot."
-        );
+        showFieldError(mealEl, "Invalid value. Use only numbers with a comma or dot.");
         ok = false;
       }
       if (!isValidMoneyInput(extraRaw)) {
-        showFieldError(
-          extraEl,
-          "Invalid value. Use only numbers with a comma or dot."
-        );
+        showFieldError(extraEl, "Invalid value. Use only numbers with a comma or dot.");
         ok = false;
       }
       if (!ok) return;
@@ -446,12 +443,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const total = salaryNum + mealNum + extraNum;
       if (!(total > 0)) {
-        showFormMessage(
-          incomeForm,
-          "  Please ensure that at least one income type has value.",
-          "error"
-        );
-        // highlight fields (no extra message needed)
+        showFormMessage(incomeForm, "Please ensure that at least one income type has value.", "error");
         showFieldError(salaryEl, "");
         showFieldError(mealEl, "");
         showFieldError(extraEl, "");
@@ -463,8 +455,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const mealAllowances = normalizeMoneyInput(mealRaw);
       const extra = normalizeMoneyInput(extraRaw);
 
-      // Sheet Income columns: Timestamp(auto); Date; Salary; Meal Allowances; Extra; Comments
-      // -> we send: Date; Salary; Meal Allowances; Extra; Comments
+      // Sheet Income: Timestamp(auto); Date; Salary; Meal Allowances; Extra; Comments
       const values = [date, salary, mealAllowances, extra, comment];
 
       try {
@@ -479,5 +470,3 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
-
-

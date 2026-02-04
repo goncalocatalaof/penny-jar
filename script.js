@@ -1,11 +1,10 @@
-// ==============================
-// Navigation + Deep linking (query + hash)
-// Supports:
-//   /?view=joana      (PWA start_url / iOS shortcuts)
-//   /#joana           (browser deep link)
-// Examples:
-//   /#personal  /#family  /#utilities  /#income  /#joana
-// ==============================
+/* ==============================
+   1) Navigation + Deep Linking
+   ============================== */
+
+/**
+ * Activates exactly one view and optionally updates the URL hash.
+ */
 function navigate(viewId, { updateHash = true } = {}) {
   document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
 
@@ -13,18 +12,28 @@ function navigate(viewId, { updateHash = true } = {}) {
   if (!el) return;
 
   el.classList.add("active");
+
+  // Keep hash in sync for easy sharing/back navigation (optional)
   if (updateHash) window.location.hash = `#${viewId}`;
 }
 
+/**
+ * Determines which view should open first.
+ * Priority:
+ *  0) localStorage one-shot "pj_launch_view" (set by joana.html or other entry pages)
+ *  1) query param ?view=...
+ *  2) hash #...
+ *  3) fallback defaultViewId
+ */
 function getInitialViewId(defaultViewId = "personal") {
-  // 0) Launch view forçada (vinda do joana.html, etc.) — usada 1 vez
+  // 0) One-shot forced launch view (most reliable for iOS per-view icons)
   const forced = (localStorage.getItem("pj_launch_view") || "").trim();
   if (forced) {
     localStorage.removeItem("pj_launch_view"); // one-shot
     if (document.getElementById(forced)) return forced;
   }
 
-  // 1) Query param (se algum dia funcionar via iOS)
+  // 1) Query param
   const params = new URLSearchParams(window.location.search);
   const q = (params.get("view") || "").trim();
   if (q && document.getElementById(q)) return q;
@@ -36,30 +45,37 @@ function getInitialViewId(defaultViewId = "personal") {
   return defaultViewId;
 }
 
-function openViewFromUrlOrDefault(defaultViewId = "personal") {
+/**
+ * Opens initial view. We intentionally avoid forcing hash on first load,
+ * to keep URLs like /index.html?view=joana clean (and iOS-friendly).
+ */
+function openInitialView(defaultViewId = "personal") {
   const viewId = getInitialViewId(defaultViewId);
-  // Don't force-writing hash on initial open (keeps ?view=... clean)
   navigate(viewId, { updateHash: false });
 }
 
-// ==============================
-// Date helpers
-// ==============================
+/* ==============================
+   2) Date helpers
+   ============================== */
+
 function setTodayOnInput(inputEl) {
   if (!inputEl) return;
   inputEl.value = new Date().toISOString().split("T")[0];
 }
 
-// ==============================
-// Strict money validation
-// Rules:
-// - allow empty
-// - only digits + optional ONE separator (comma OR dot)
-// - no negatives
-// - no thousand separators
-// - no both comma and dot
-// - separator not first/last
-// ==============================
+/* ==============================
+   3) Money helpers (strict)
+   ============================== */
+
+/**
+ * Rules:
+ * - allow empty
+ * - only digits + optional ONE separator (comma OR dot)
+ * - no negatives
+ * - no thousand separators
+ * - no both comma and dot
+ * - separator not first/last
+ */
 function isValidMoneyInput(raw) {
   const s = (raw ?? "").toString().trim();
   if (!s) return true;
@@ -80,9 +96,12 @@ function isValidMoneyInput(raw) {
   return true;
 }
 
+/**
+ * Converts comma decimal to dot decimal. Keeps empty as empty.
+ */
 function normalizeMoneyInput(raw) {
   const s = (raw ?? "").toString().trim();
-  if (!s) return ""; // keep empty as empty cell
+  if (!s) return "";
   return s.replace(",", ".");
 }
 
@@ -93,9 +112,10 @@ function moneyToNumber(raw) {
   return Number.isFinite(n) ? n : NaN;
 }
 
-// ==============================
-// Inline error helpers (scoped to the form)
-// ==============================
+/* ==============================
+   4) Inline error helpers (scoped)
+   ============================== */
+
 function clearInlineErrors(formEl) {
   if (!formEl) return;
   formEl.querySelectorAll(".field-error").forEach((el) => el.remove());
@@ -120,7 +140,7 @@ function showFormMessage(formEl, message, kind = "error") {
 function showFieldError(anchorEl, message) {
   if (!anchorEl) return;
 
-  // remove existing inline error directly after this anchor
+  // Remove existing inline error directly after this anchor
   const next = anchorEl.nextElementSibling;
   if (next && next.classList.contains("field-error")) next.remove();
 
@@ -131,7 +151,7 @@ function showFieldError(anchorEl, message) {
     anchorEl.insertAdjacentElement("afterend", err);
   }
 
-  // highlight only form controls
+  // Highlight only form controls
   if (anchorEl.matches && anchorEl.matches("input, textarea, select")) {
     anchorEl.classList.add("input-error");
     anchorEl.addEventListener(
@@ -146,9 +166,10 @@ function showFieldError(anchorEl, message) {
   }
 }
 
-// ==============================
-// API submit
-// ==============================
+/* ==============================
+   5) API submit
+   ============================== */
+
 async function submitToSheet(values, sheetName) {
   const res = await fetch("/api/submit", {
     method: "POST",
@@ -164,15 +185,10 @@ async function submitToSheet(values, sheetName) {
   return res.json().catch(() => ({}));
 }
 
-// ==============================
-// FAMILY: Type rules + UI (clickable boxes like categories)
-// Requires in Family form HTML:
-// <div id="family-type-group" style="display:none;">
-//   <label>Type</label>
-//   <div class="categories" id="family-type-options"></div>
-//   <input type="hidden" id="family-type" name="type" />
-// </div>
-// ==============================
+/* ==============================
+   6) Family: Type rules + UI
+   ============================== */
+
 const FAMILY_FORCE_CHILD = new Set(["Education", "Gear", "Play", "Clothing"]);
 
 const FAMILY_TYPE_OPTIONS = {
@@ -235,26 +251,19 @@ function setFamilyTypeUIForCategory(category) {
   });
 }
 
-// ==============================
-// DOM Ready
-// ==============================
-document.addEventListener("DOMContentLoaded", () => {
-  // Open correct view from URL (?view=... or #...) or default
-  openViewFromUrlOrDefault("personal");
+/* ==============================
+   7) Shared UI wiring
+   ============================== */
 
-  // React to back/forward or manual hash changes
-  window.addEventListener("hashchange", () => {
-    const raw = (window.location.hash || "").replace("#", "").trim();
-    if (raw && document.getElementById(raw)) {
-      // navigate without re-writing the hash
-      navigate(raw, { updateHash: false });
-    }
-  });
-
-  // Default date on all date inputs
-  document.querySelectorAll("input[type='date']").forEach(setTodayOnInput);
-
-  // CATEGORY selection (Personal / Family / Utilities / Joana / etc.)
+/**
+ * One handler for clicking category boxes inside each .categories container.
+ * - Selects .category
+ * - Applies Family Type UI rules
+ * - Handles optional grocery icon area
+ *
+ * NOTE: This uses event delegation, so it works for all forms automatically.
+ */
+function wireCategorySelection() {
   document.querySelectorAll(".categories").forEach((container) => {
     container.addEventListener("click", (e) => {
       // Ignore clicks in Family Type options container (handled by its own listeners)
@@ -263,10 +272,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const btn = e.target.closest(".category");
       if (!btn) return;
 
+      // Normal selection behavior for this container
       container.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
       btn.classList.add("selected");
 
-      const cat = btn.textContent.trim();
+      // Resolve category text:
+      // - For utility icons, the text might be empty; keep fallback to data-value if present.
+      const cat = (btn.textContent || "").trim() || (btn.dataset.value || "").trim();
 
       // Family: update type UI based on selected category
       if (btn.closest("#family")) {
@@ -280,285 +292,325 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
+}
 
-  // ==========================
-  // PERSONAL
-  // ==========================
-  const personalForm = document.getElementById("form-personal");
-  if (personalForm) {
-    personalForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      clearInlineErrors(personalForm);
-
-      const date = personalForm.querySelector("input[name='date']")?.value || "";
-      const category =
-        personalForm.querySelector(".category.selected")?.textContent?.trim() || "";
-      const amountEl = personalForm.querySelector("input[name='amount']");
-      const amountRaw = amountEl?.value?.trim() || "";
-      const comment = personalForm.querySelector("input[name='comment']")?.value || "";
-
-      if (!category) {
-        showFieldError(personalForm.querySelector(".categories"), "Select one category.");
-        return;
-      }
-
-      if (!isValidMoneyInput(amountRaw)) {
-        showFieldError(amountEl, "Invalid value. Use only numbers with a comma or dot.");
-        return;
-      }
-
-      const amount = normalizeMoneyInput(amountRaw);
-
-      // Sheet Personal: Date; Category; Amount; Comments
-      const values = [date, category, amount, comment];
-
-      try {
-        await submitToSheet(values, "Personal");
-        showFormMessage(personalForm, "Saved successfully.", "success");
-        personalForm.reset();
-        personalForm.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
-        setTodayOnInput(personalForm.querySelector("input[name='date']"));
-      } catch (err) {
-        console.error(err);
-        showFormMessage(personalForm, "Save failed. Please try again.", "error");
-      }
-    });
-  }
-
-  // ==========================
-  // FAMILY
-  // ==========================
+/**
+ * Family grocery icon click -> fills the comment field.
+ */
+function wireFamilyGroceryIcons() {
   const familyForm = document.getElementById("form-family");
-  if (familyForm) {
-    // Grocery icons -> fill family comment (works with <img data-word="...">)
-    const groceryIconsEl = document.getElementById("grocery-icons");
-    const familyCommentInput =
-      document.getElementById("family-comment") ||
-      familyForm.querySelector("input[name='comment']");
+  if (!familyForm) return;
 
-    if (groceryIconsEl && familyCommentInput) {
-      groceryIconsEl.addEventListener("click", (e) => {
-        const img = e.target.closest("img.grocery-icon");
-        if (!img) return;
+  const groceryIconsEl = document.getElementById("grocery-icons");
+  const familyCommentInput =
+    document.getElementById("family-comment") || familyForm.querySelector("input[name='comment']");
 
-        const word = img.dataset.word;
-        if (!word) return;
+  if (!groceryIconsEl || !familyCommentInput) return;
 
-        // Fill comment with selected grocery store
-        familyCommentInput.value = word;
-        familyCommentInput.focus();
-      });
+  groceryIconsEl.addEventListener("click", (e) => {
+    const img = e.target.closest("img.grocery-icon");
+    if (!img) return;
+
+    const word = img.dataset.word;
+    if (!word) return;
+
+    familyCommentInput.value = word;
+    familyCommentInput.focus();
+  });
+}
+
+/* ==============================
+   8) Form handlers
+   ============================== */
+
+function wirePersonalForm() {
+  const form = document.getElementById("form-personal");
+  if (!form) return;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearInlineErrors(form);
+
+    const date = form.querySelector("input[name='date']")?.value || "";
+    const category = form.querySelector(".category.selected")?.textContent?.trim() || "";
+    const amountEl = form.querySelector("input[name='amount']");
+    const amountRaw = amountEl?.value?.trim() || "";
+    const comment = form.querySelector("input[name='comment']")?.value || "";
+
+    if (!category) {
+      showFieldError(form.querySelector(".categories"), "Select one category.");
+      return;
     }
 
-    familyForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      clearInlineErrors(familyForm);
+    if (!isValidMoneyInput(amountRaw)) {
+      showFieldError(amountEl, "Invalid value. Use only numbers with a comma or dot.");
+      return;
+    }
 
-      const date = familyForm.querySelector("input[name='date']")?.value || "";
-      const category =
-        familyForm.querySelector(".category.selected")?.textContent?.trim() || "";
-      const amountEl = familyForm.querySelector("input[name='amount']");
-      const amountRaw = amountEl?.value?.trim() || "";
-      const comment = familyForm.querySelector("input[name='comment']")?.value || "";
+    const amount = normalizeMoneyInput(amountRaw);
 
-      if (!category) {
-        showFieldError(familyForm.querySelector(".categories"), "Select one category.");
-        return;
-      }
+    // Sheet Personal: Date; Category; Amount; Comments
+    const values = [date, category, amount, comment];
 
-      if (!isValidMoneyInput(amountRaw)) {
-        showFieldError(amountEl, "Invalid value. Use only numbers with a comma or dot.");
-        return;
-      }
+    try {
+      await submitToSheet(values, "Personal");
+      showFormMessage(form, "Saved successfully.", "success");
+      form.reset();
+      form.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
+      setTodayOnInput(form.querySelector("input[name='date']"));
+    } catch (err) {
+      console.error(err);
+      showFormMessage(form, "Save failed. Please try again.", "error");
+    }
+  });
+}
 
-      const amount = normalizeMoneyInput(amountRaw);
+function wireFamilyForm() {
+  const form = document.getElementById("form-family");
+  if (!form) return;
 
-      const type = (document.getElementById("family-type")?.value || "").trim();
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearInlineErrors(form);
 
-      // Sheet Family: Date; Category; Amount; Comments; Type
-      const values = [date, category, amount, comment, type];
+    const date = form.querySelector("input[name='date']")?.value || "";
+    const category = form.querySelector(".category.selected")?.textContent?.trim() || "";
+    const amountEl = form.querySelector("input[name='amount']");
+    const amountRaw = amountEl?.value?.trim() || "";
+    const comment = form.querySelector("input[name='comment']")?.value || "";
 
-      try {
-        await submitToSheet(values, "Family");
-        showFormMessage(familyForm, "Saved successfully.", "success");
+    if (!category) {
+      showFieldError(form.querySelector(".categories"), "Select one category.");
+      return;
+    }
 
-        familyForm.reset();
-        familyForm.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
+    if (!isValidMoneyInput(amountRaw)) {
+      showFieldError(amountEl, "Invalid value. Use only numbers with a comma or dot.");
+      return;
+    }
 
-        if (groceryIconsEl) groceryIconsEl.style.display = "none";
+    const amount = normalizeMoneyInput(amountRaw);
+    const type = (document.getElementById("family-type")?.value || "").trim();
 
-        clearFamilyTypeUI();
-        setTodayOnInput(familyForm.querySelector("input[name='date']"));
-      } catch (err) {
-        console.error(err);
-        showFormMessage(familyForm, "Save failed. Please try again.", "error");
-      }
-    });
-  }
+    // Sheet Family: Date; Category; Amount; Comments; Type
+    const values = [date, category, amount, comment, type];
 
-  // ==========================
-  // UTILITIES
-  // ==========================
-  const utilitiesForm = document.getElementById("form-utilities");
-  if (utilitiesForm) {
-    utilitiesForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      clearInlineErrors(utilitiesForm);
+    try {
+      await submitToSheet(values, "Family");
+      showFormMessage(form, "Saved successfully.", "success");
 
-      const date = utilitiesForm.querySelector("input[name='date']")?.value || "";
-      const category =
-        utilitiesForm.querySelector(".category.selected")?.textContent?.trim() || "";
-      const valueEl = utilitiesForm.querySelector("input[name='value']");
-      const valueRaw = valueEl?.value?.trim() || "";
-      const comment = utilitiesForm.querySelector("input[name='comment']")?.value || "";
+      form.reset();
+      form.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
 
-      if (!category) {
-        showFieldError(utilitiesForm.querySelector(".categories"), "Select one category.");
-        return;
-      }
+      const groceryIconsEl = document.getElementById("grocery-icons");
+      if (groceryIconsEl) groceryIconsEl.style.display = "none";
 
-      if (!isValidMoneyInput(valueRaw)) {
-        showFieldError(valueEl, "Invalid value. Use only numbers with a comma or dot.");
-        return;
-      }
+      clearFamilyTypeUI();
+      setTodayOnInput(form.querySelector("input[name='date']"));
+    } catch (err) {
+      console.error(err);
+      showFormMessage(form, "Save failed. Please try again.", "error");
+    }
+  });
+}
 
-      const value = normalizeMoneyInput(valueRaw);
+function wireUtilitiesForm() {
+  const form = document.getElementById("form-utilities");
+  if (!form) return;
 
-      // Sheet Utilities: Date; Category; Value; Comments
-      const values = [date, category, value, comment];
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearInlineErrors(form);
 
-      try {
-        await submitToSheet(values, "Utilities");
-        showFormMessage(utilitiesForm, "Saved successfully.", "success");
-        utilitiesForm.reset();
-        utilitiesForm.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
-        setTodayOnInput(utilitiesForm.querySelector("input[name='date']"));
-      } catch (err) {
-        console.error(err);
-        showFormMessage(utilitiesForm, "Save failed. Please try again.", "error");
-      }
-    });
-  }
+    const date = form.querySelector("input[name='date']")?.value || "";
 
-  // ==========================
-  // INCOME
-  // ==========================
-  const incomeForm = document.getElementById("form-income");
-  if (incomeForm) {
-    incomeForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      clearInlineErrors(incomeForm);
+    // Utilities categories are icons, so selected element may have empty text.
+    const selected = form.querySelector(".category.selected");
+    const category =
+      selected?.textContent?.trim() ||
+      selected?.dataset?.value?.trim() ||
+      ""; // fallback
 
-      const dateInput = incomeForm.querySelector("input[name='date']");
-      const date = (dateInput?.value || "").trim() || new Date().toISOString().split("T")[0];
+    // In your HTML "Value" input is named amount, not value
+    const valueEl = form.querySelector("input[name='amount']");
+    const valueRaw = valueEl?.value?.trim() || "";
+    const comment = form.querySelector("input[name='comment']")?.value || "";
 
-      const salaryEl = incomeForm.querySelector("input[name='salary']");
-      const mealEl = incomeForm.querySelector("input[name='mealAllowances']");
-      const extraEl = incomeForm.querySelector("input[name='extra']");
+    if (!category) {
+      showFieldError(form.querySelector(".categories"), "Select one category.");
+      return;
+    }
 
-      const salaryRaw = salaryEl?.value?.trim() || "";
-      const mealRaw = mealEl?.value?.trim() || "";
-      const extraRaw = extraEl?.value?.trim() || "";
+    if (!isValidMoneyInput(valueRaw)) {
+      showFieldError(valueEl, "Invalid value. Use only numbers with a comma or dot.");
+      return;
+    }
 
-      const comment = incomeForm.querySelector("input[name='comment']")?.value || "";
+    const value = normalizeMoneyInput(valueRaw);
 
-      // Validate format (strict)
-      let ok = true;
-      if (!isValidMoneyInput(salaryRaw)) {
-        showFieldError(salaryEl, "Invalid value. Use only numbers with a comma or dot.");
-        ok = false;
-      }
-      if (!isValidMoneyInput(mealRaw)) {
-        showFieldError(mealEl, "Invalid value. Use only numbers with a comma or dot.");
-        ok = false;
-      }
-      if (!isValidMoneyInput(extraRaw)) {
-        showFieldError(extraEl, "Invalid value. Use only numbers with a comma or dot.");
-        ok = false;
-      }
-      if (!ok) return;
+    // NOTE:
+    // Your Utilities form also has "consumption". If you want to store it, add it here.
+    // For now we keep your existing structure: Date; Category; Value; Comments
+    const values = [date, category, value, comment];
 
-      // Rule: sum must be > 0
-      const salaryNum = moneyToNumber(salaryRaw);
-      const mealNum = moneyToNumber(mealRaw);
-      const extraNum = moneyToNumber(extraRaw);
+    try {
+      await submitToSheet(values, "Utilities");
+      showFormMessage(form, "Saved successfully.", "success");
+      form.reset();
+      form.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
+      setTodayOnInput(form.querySelector("input[name='date']"));
+    } catch (err) {
+      console.error(err);
+      showFormMessage(form, "Save failed. Please try again.", "error");
+    }
+  });
+}
 
-      if ([salaryNum, mealNum, extraNum].some((n) => Number.isNaN(n))) {
-        showFormMessage(incomeForm, "Valores inválidos.", "error");
-        return;
-      }
+function wireIncomeForm() {
+  const form = document.getElementById("form-income");
+  if (!form) return;
 
-      const total = salaryNum + mealNum + extraNum;
-      if (!(total > 0)) {
-        showFormMessage(incomeForm, "Please ensure that at least one income type has value.", "error");
-        showFieldError(salaryEl, "");
-        showFieldError(mealEl, "");
-        showFieldError(extraEl, "");
-        return;
-      }
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearInlineErrors(form);
 
-      // Store with dot only
-      const salary = normalizeMoneyInput(salaryRaw);
-      const mealAllowances = normalizeMoneyInput(mealRaw);
-      const extra = normalizeMoneyInput(extraRaw);
+    const dateInput = form.querySelector("input[name='date']");
+    const date = (dateInput?.value || "").trim() || new Date().toISOString().split("T")[0];
 
-      // Sheet Income: Timestamp(auto); Date; Salary; Meal Allowances; Extra; Comments
-      const values = [date, salary, mealAllowances, extra, comment];
+    const salaryEl = form.querySelector("input[name='salary']");
+    const mealEl = form.querySelector("input[name='mealAllowances']");
+    const extraEl = form.querySelector("input[name='extra']");
 
-      try {
-        await submitToSheet(values, "Income");
-        showFormMessage(incomeForm, "Saved successfully.", "success");
-        incomeForm.reset();
-        setTodayOnInput(dateInput);
-      } catch (err) {
-        console.error(err);
-        showFormMessage(incomeForm, "Save failed. Please try again.", "error");
-      }
-    });
-  }
+    const salaryRaw = salaryEl?.value?.trim() || "";
+    const mealRaw = mealEl?.value?.trim() || "";
+    const extraRaw = extraEl?.value?.trim() || "";
 
-  // ==========================
-  // JOANA
-  // ==========================
-  const joanaForm = document.getElementById("form-joana");
-  if (joanaForm) {
-    joanaForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      clearInlineErrors(joanaForm);
+    const comment = form.querySelector("input[name='comment']")?.value || "";
 
-      const date = joanaForm.querySelector("input[name='date']")?.value || "";
-      const category =
-        joanaForm.querySelector(".category.selected")?.textContent?.trim() || "";
-      const amountEl = joanaForm.querySelector("input[name='amount']");
-      const amountRaw = amountEl?.value?.trim() || "";
-      const comment = joanaForm.querySelector("input[name='comment']")?.value || "";
+    // Validate format (strict)
+    let ok = true;
+    if (!isValidMoneyInput(salaryRaw)) {
+      showFieldError(salaryEl, "Invalid value. Use only numbers with a comma or dot.");
+      ok = false;
+    }
+    if (!isValidMoneyInput(mealRaw)) {
+      showFieldError(mealEl, "Invalid value. Use only numbers with a comma or dot.");
+      ok = false;
+    }
+    if (!isValidMoneyInput(extraRaw)) {
+      showFieldError(extraEl, "Invalid value. Use only numbers with a comma or dot.");
+      ok = false;
+    }
+    if (!ok) return;
 
-      if (!category) {
-        showFieldError(joanaForm.querySelector(".categories"), "Select one category.");
-        return;
-      }
+    // Rule: sum must be > 0
+    const salaryNum = moneyToNumber(salaryRaw);
+    const mealNum = moneyToNumber(mealRaw);
+    const extraNum = moneyToNumber(extraRaw);
 
-      if (!isValidMoneyInput(amountRaw)) {
-        showFieldError(amountEl, "Invalid value. Use only numbers with a comma or dot.");
-        return;
-      }
+    if ([salaryNum, mealNum, extraNum].some((n) => Number.isNaN(n))) {
+      showFormMessage(form, "Valores inválidos.", "error");
+      return;
+    }
 
-      const amount = normalizeMoneyInput(amountRaw);
+    const total = salaryNum + mealNum + extraNum;
+    if (!(total > 0)) {
+      showFormMessage(form, "Please ensure that at least one income type has value.", "error");
+      showFieldError(salaryEl, "");
+      showFieldError(mealEl, "");
+      showFieldError(extraEl, "");
+      return;
+    }
 
-      // Sheet Joana: Date; Category; Amount; Comments
-      const values = [date, category, amount, comment];
+    // Store with dot only
+    const salary = normalizeMoneyInput(salaryRaw);
+    const mealAllowances = normalizeMoneyInput(mealRaw);
+    const extra = normalizeMoneyInput(extraRaw);
 
-      try {
-        await submitToSheet(values, "Joana");
-        showFormMessage(joanaForm, "Saved successfully.", "success");
-        joanaForm.reset();
-        joanaForm.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
-        setTodayOnInput(joanaForm.querySelector("input[name='date']"));
-      } catch (err) {
-        console.error(err);
-        showFormMessage(joanaForm, "Save failed. Please try again.", "error");
-      }
-    });
-  }
+    // Sheet Income: Timestamp(auto); Date; Salary; Meal Allowances; Extra; Comments
+    const values = [date, salary, mealAllowances, extra, comment];
+
+    try {
+      await submitToSheet(values, "Income");
+      showFormMessage(form, "Saved successfully.", "success");
+      form.reset();
+      setTodayOnInput(dateInput);
+    } catch (err) {
+      console.error(err);
+      showFormMessage(form, "Save failed. Please try again.", "error");
+    }
+  });
+}
+
+function wireJoanaForm() {
+  const form = document.getElementById("form-joana");
+  if (!form) return;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearInlineErrors(form);
+
+    const date = form.querySelector("input[name='date']")?.value || "";
+    const category = form.querySelector(".category.selected")?.textContent?.trim() || "";
+    const amountEl = form.querySelector("input[name='amount']");
+    const amountRaw = amountEl?.value?.trim() || "";
+    const comment = form.querySelector("input[name='comment']")?.value || "";
+
+    if (!category) {
+      showFieldError(form.querySelector(".categories"), "Select one category.");
+      return;
+    }
+
+    if (!isValidMoneyInput(amountRaw)) {
+      showFieldError(amountEl, "Invalid value. Use only numbers with a comma or dot.");
+      return;
+    }
+
+    const amount = normalizeMoneyInput(amountRaw);
+
+    // Sheet Joana: Date; Category; Amount; Comments
+    const values = [date, category, amount, comment];
+
+    try {
+      await submitToSheet(values, "Joana");
+      showFormMessage(form, "Saved successfully.", "success");
+      form.reset();
+      form.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
+      setTodayOnInput(form.querySelector("input[name='date']"));
+    } catch (err) {
+      console.error(err);
+      showFormMessage(form, "Save failed. Please try again.", "error");
+    }
+  });
+}
+
+/* ==============================
+   9) Boot
+   ============================== */
+
+document.addEventListener("DOMContentLoaded", () => {
+  // 1) IMPORTANT: decide initial view first (before anything else)
+  openInitialView("personal");
+
+  // 2) Keep navigation in sync when hash changes (back/forward/manual edit)
+  window.addEventListener("hashchange", () => {
+    const raw = (window.location.hash || "").replace("#", "").trim();
+    if (raw && document.getElementById(raw)) {
+      navigate(raw, { updateHash: false });
+    }
+  });
+
+  // 3) Default today's date on all date inputs
+  document.querySelectorAll("input[type='date']").forEach(setTodayOnInput);
+
+  // 4) Shared UI wiring
+  wireCategorySelection();
+  wireFamilyGroceryIcons();
+
+  // 5) Form wiring
+  wirePersonalForm();
+  wireFamilyForm();
+  wireUtilitiesForm();
+  wireIncomeForm();
+  wireJoanaForm();
 });
-

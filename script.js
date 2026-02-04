@@ -470,3 +470,49 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+  // ==========================
+  // JOANA
+  // ==========================
+  const personalForm = document.getElementById("form-joana");
+  if (joanaForm) {
+    joanaForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearInlineErrors(joanaForm);
+
+      const date = joanaForm.querySelector("input[name='date']")?.value || "";
+      const category =
+        joanaForm.querySelector(".category.selected")?.textContent?.trim() || "";
+      const amountEl = joanaForm.querySelector("input[name='amount']");
+      const amountRaw = amountEl?.value?.trim() || "";
+      const comment = joanaForm.querySelector("input[name='comment']")?.value || "";
+
+      if (!category) {
+        showFieldError(joanaForm.querySelector(".categories"), "Select one category.");
+        return;
+      }
+
+      if (!isValidMoneyInput(amountRaw)) {
+        showFieldError(amountEl, "Invalid value. Use only numbers with a comma or dot.");
+        return;
+      }
+
+      const amount = normalizeMoneyInput(amountRaw);
+
+      // Sheet Personal: Date; Category; Amount; Comments
+      const values = [date, category, amount, comment];
+
+      try {
+        await submitToSheet(values, "Joana");
+        showFormMessage(joanaForm, "Saved successfully.", "success");
+        joanaForm.reset();
+        joanaForm.querySelectorAll(".category").forEach((c) => c.classList.remove("selected"));
+        setTodayOnInput(joanaForm.querySelector("input[name='date']"));
+      } catch (err) {
+        console.error(err);
+        showFormMessage(joanaForm, "Save failed. Please try again.", "error");
+      }
+    });
+  }
+
+

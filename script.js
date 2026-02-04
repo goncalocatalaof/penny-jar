@@ -1,9 +1,27 @@
 // ==============================
-// Navigation
+// Navigation + Deep linking (URL hash)
+// Examples:
+//   /#personal  /#family  /#utilities  /#income  /#joana
 // ==============================
-function navigate(viewId) {
+function navigate(viewId, { updateHash = true } = {}) {
   document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
-  document.getElementById(viewId).classList.add("active");
+
+  const target = document.getElementById(viewId);
+  if (target) {
+    target.classList.add("active");
+    if (updateHash) window.location.hash = `#${viewId}`;
+  }
+}
+
+function openViewFromUrlOrDefault(defaultViewId = "personal") {
+  const raw = (window.location.hash || "").replace("#", "").trim();
+  const viewId = raw || defaultViewId;
+
+  if (document.getElementById(viewId)) {
+    navigate(viewId, { updateHash: !!raw }); // if no hash, don't force one
+  } else {
+    navigate(defaultViewId, { updateHash: false });
+  }
 }
 
 // ==============================
@@ -38,7 +56,7 @@ function isValidMoneyInput(raw) {
   const sep = hasComma ? "," : hasDot ? "." : null;
   if (!sep) return true;
 
-  if ((s.split(sep).length - 1) > 1) return false;
+  if (s.split(sep).length - 1 > 1) return false;
   if (s.startsWith(sep) || s.endsWith(sep)) return false;
 
   return true;
@@ -185,7 +203,6 @@ function setFamilyTypeUIForCategory(category) {
 
   optionsWrap.innerHTML = options
     .map((v) => {
-      // show label nicer; stored value is lowercase
       const label = v.charAt(0).toUpperCase() + v.slice(1);
       return `<div class="category" data-type="${v}">${label}</div>`;
     })
@@ -204,10 +221,20 @@ function setFamilyTypeUIForCategory(category) {
 // DOM Ready
 // ==============================
 document.addEventListener("DOMContentLoaded", () => {
+  // Open correct view from URL (/#joana etc.) or default
+  openViewFromUrlOrDefault("personal");
+
+  // React to back/forward or manual hash changes
+  window.addEventListener("hashchange", () => {
+    // when hash changes, navigate without re-writing the hash
+    const raw = (window.location.hash || "").replace("#", "").trim();
+    if (raw) navigate(raw, { updateHash: false });
+  });
+
   // Default date on all date inputs
   document.querySelectorAll("input[type='date']").forEach(setTodayOnInput);
 
-  // CATEGORY selection (Personal / Family / Utilities)
+  // CATEGORY selection (Personal / Family / Utilities / Joana / etc.)
   document.querySelectorAll(".categories").forEach((container) => {
     container.addEventListener("click", (e) => {
       // Ignore clicks in Family Type options container (handled by its own listeners)
@@ -469,7 +496,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
-});
 
   // ==========================
   // JOANA
@@ -514,6 +540,4 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
-
-
-
+});

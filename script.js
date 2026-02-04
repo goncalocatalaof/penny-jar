@@ -17,12 +17,19 @@ function navigate(viewId, { updateHash = true } = {}) {
 }
 
 function getInitialViewId(defaultViewId = "personal") {
-  // 1) Query param (iOS Home Screen / manifest shortcuts)
+  // 0) Launch view forçada (vinda do joana.html, etc.) — usada 1 vez
+  const forced = (localStorage.getItem("pj_launch_view") || "").trim();
+  if (forced) {
+    localStorage.removeItem("pj_launch_view"); // one-shot
+    if (document.getElementById(forced)) return forced;
+  }
+
+  // 1) Query param (se algum dia funcionar via iOS)
   const params = new URLSearchParams(window.location.search);
   const q = (params.get("view") || "").trim();
   if (q && document.getElementById(q)) return q;
 
-  // 2) Hash (regular deep links)
+  // 2) Hash
   const h = (window.location.hash || "").replace("#", "").trim();
   if (h && document.getElementById(h)) return h;
 
@@ -554,3 +561,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+

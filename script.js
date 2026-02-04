@@ -1,57 +1,15 @@
 /* ==============================
-   1) Navigation + Deep Linking
+   1) Navigation
    ============================== */
 
-/**
- * Activates exactly one view and optionally updates the URL hash.
- */
-function navigate(viewId, { updateHash = true } = {}) {
+function navigate(viewId) {
+  // Desativa todas as views e ativa só a pedida
   document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
 
   const el = document.getElementById(viewId);
   if (!el) return;
 
   el.classList.add("active");
-
-  // Keep hash in sync for easy sharing/back navigation (optional)
-  if (updateHash) window.location.hash = `#${viewId}`;
-}
-
-/**
- * Determines which view should open first.
- * Priority:
- *  0) localStorage one-shot "pj_launch_view" (set by joana.html or other entry pages)
- *  1) query param ?view=...
- *  2) hash #...
- *  3) fallback defaultViewId
- */
-function getInitialViewId(defaultViewId = "personal") {
-  // 0) One-shot forced launch view (most reliable for iOS per-view icons)
-  const forced = (localStorage.getItem("pj_launch_view") || "").trim();
-  if (forced) {
-    localStorage.removeItem("pj_launch_view"); // one-shot
-    if (document.getElementById(forced)) return forced;
-  }
-
-  // 1) Query param
-  const params = new URLSearchParams(window.location.search);
-  const q = (params.get("view") || "").trim();
-  if (q && document.getElementById(q)) return q;
-
-  // 2) Hash
-  const h = (window.location.hash || "").replace("#", "").trim();
-  if (h && document.getElementById(h)) return h;
-
-  return defaultViewId;
-}
-
-/**
- * Opens initial view. We intentionally avoid forcing hash on first load,
- * to keep URLs like /index.html?view=joana clean (and iOS-friendly).
- */
-function openInitialView(defaultViewId = "personal") {
-  const viewId = getInitialViewId(defaultViewId);
-  navigate(viewId, { updateHash: false });
 }
 
 /* ==============================
@@ -96,9 +54,7 @@ function isValidMoneyInput(raw) {
   return true;
 }
 
-/**
- * Converts comma decimal to dot decimal. Keeps empty as empty.
- */
+/** Converts comma decimal to dot decimal. Keeps empty as empty. */
 function normalizeMoneyInput(raw) {
   const s = (raw ?? "").toString().trim();
   if (!s) return "";
@@ -294,9 +250,7 @@ function wireCategorySelection() {
   });
 }
 
-/**
- * Family grocery icon click -> fills the comment field.
- */
+/** Family grocery icon click -> fills the comment field. */
 function wireFamilyGroceryIcons() {
   const familyForm = document.getElementById("form-family");
   if (!familyForm) return;
@@ -426,10 +380,7 @@ function wireUtilitiesForm() {
 
     // Utilities categories are icons, so selected element may have empty text.
     const selected = form.querySelector(".category.selected");
-    const category =
-      selected?.textContent?.trim() ||
-      selected?.dataset?.value?.trim() ||
-      ""; // fallback
+    const category = selected?.textContent?.trim() || selected?.dataset?.value?.trim() || "";
 
     // In your HTML "Value" input is named amount, not value
     const valueEl = form.querySelector("input[name='amount']");
@@ -448,9 +399,7 @@ function wireUtilitiesForm() {
 
     const value = normalizeMoneyInput(valueRaw);
 
-    // NOTE:
-    // Your Utilities form also has "consumption". If you want to store it, add it here.
-    // For now we keep your existing structure: Date; Category; Value; Comments
+    // Sheet Utilities: Date; Category; Value; Comments
     const values = [date, category, value, comment];
 
     try {
@@ -589,28 +538,24 @@ function wireJoanaForm() {
    ============================== */
 
 document.addEventListener("DOMContentLoaded", () => {
-  // 1) IMPORTANT: decide initial view first (before anything else)
-  openInitialView("personal");
+  // 1) Abre sempre a view inicial fixa (SEM deep linking)
+  // Troca "personal" se quiseres outra como default.
+  navigate("personal");
 
-  // 2) Keep navigation in sync when hash changes (back/forward/manual edit)
-  window.addEventListener("hashchange", () => {
-    const raw = (window.location.hash || "").replace("#", "").trim();
-    if (raw && document.getElementById(raw)) {
-      navigate(raw, { updateHash: false });
-    }
-  });
-
-  // 3) Default today's date on all date inputs
+  // 2) Default today's date on all date inputs
   document.querySelectorAll("input[type='date']").forEach(setTodayOnInput);
 
-  // 4) Shared UI wiring
+  // 3) Shared UI wiring
   wireCategorySelection();
   wireFamilyGroceryIcons();
 
-  // 5) Form wiring
+  // 4) Form wiring
   wirePersonalForm();
   wireFamilyForm();
   wireUtilitiesForm();
   wireIncomeForm();
-  wireJoanaForm();
+  wireJoanaForm(); // se removeste Joana do HTML, isto simplesmente não faz nada
+
+  // 5) Safety: ensure Family Type UI starts clean
+  clearFamilyTypeUI();
 });

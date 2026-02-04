@@ -474,7 +474,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================
   // JOANA
   // ==========================
-  const personalForm = document.getElementById("form-joana");
+  const joanaForm = document.getElementById("form-joana");
   if (joanaForm) {
     joanaForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -499,7 +499,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const amount = normalizeMoneyInput(amountRaw);
 
-      // Sheet Personal: Date; Category; Amount; Comments
+      // Sheet Joana: Date; Category; Amount; Comments
       const values = [date, category, amount, comment];
 
       try {
@@ -514,5 +514,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
 
 

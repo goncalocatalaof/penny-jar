@@ -197,6 +197,40 @@
       </form>
     </section>
 
+    <!-- Joana Expense View -->
+    <section id="joana" class="view active">
+      <h2>Joana Expense</h2>
+      <form id="form-joana">
+        <div class="form-group">
+          <label>Date:</label>
+          <input type="date" name="date" id="joana-date" required />
+        </div>
+
+        <div class="form-group">
+          <label>Amount:</label>
+          <input type="text" name="amount" inputmode="decimal" placeholder="0,00" id="joana-value" class="amount" required />
+        </div>
+
+        <div class="form-group">
+          <label>Category</label>
+          <div class="categories">
+            <div class="category">Restaurante</div>
+            <div class="category">Estética</div>
+            <div class="category">Roupa</div>
+            <div class="category">Saúde</div>
+            <div class="category">Gasolina</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Comment:</label>
+          <input type="text" name="comment" id="joana-comment" />
+        </div>
+
+        <button type="submit">Save</button>
+      </form>
+    </section>
+    
   </main>
 
   <!-- Bottom Navigation -->
@@ -214,4 +248,5 @@
   <script src="script.js"></script>
 </body>
 </html>
+
 
